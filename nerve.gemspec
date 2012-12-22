@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = Nerve::VERSION
   gem.authors       = ["Martin Rhoads"]
   gem.email         = ["martin.rhoads@airbnb.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{description}
+  gem.summary       = %q{summary}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($/)
