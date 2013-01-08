@@ -22,11 +22,13 @@ module Nerve
       @health_check = opts['health_check']
 
       # internal settings
+      @zk = nil
       @failure_threshold = 2 
       @exiting = False
     end
 
     def run
+      @zk = ZK.new(@zk_path)
       begin
         register_thread = Thread.new(register_machine)
         Thread.new(register_service)
@@ -38,10 +40,24 @@ module Nerve
     end
 
     def register_machine
-      # create ephemeral node in zookeeper under <root>/machines/<instance_id>
+      failed = true
+      machine_node_path = "/machines/#{@instance_id}"
 
       while not @exiting
-        # write json hash {service:service_name, host:host, cpu_idle:cpu_idle} into ephemeral node
+        begin
+          @zk.ping?
+        rescue Zookeeeper::Exceptions::NotConnected => e
+          failed = true
+        else
+          # write json hash {service:service_name, host:host, cpu_idle:cpu_idle} into ephemeral node
+          if failed or not @zk.exists?(machine_node_path)
+            create_ephemeral_node(
+              machine_node_path
+              {'service' => @service_name, 'cpu_ide' => cpu_idle })
+          failed = false
+        end
+
+        sleep(5)
       end
     end
 
@@ -71,6 +87,15 @@ module Nerve
 
     def delete_service_node
       # delete node in zookeeper under <root>/services/<service_name>/<instance_id>
+    end
+
+    def create_ephemeral_node(path, data="")
+      begin
+        @zk.delete(path)
+      rescue ZK::Exceptions::NoNode
+      end
+
+      @zk.create(path, {:data=>data.to_json})
     end
   end
 end
