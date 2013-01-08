@@ -1,23 +1,19 @@
 module Nerve
-  module HealthCheck
-    require 'net/http'
+  module ServiceCheck
+    require 'socket'
     
-    class HttpHealthCheck
+    class TcpServiceCheck
       def initialize(opts={})
         raise ArgumentError unless opts['port']
-        raise ArgumentError unless opts['uri']
         @port = opts['port']
-        @uri = opts['uri']
         @host = opts['host'] ? opts['host'] : '0.0.0.0'
       end
 
       def check
         # catch all errors
         begin
-          connection = Net::HTTP.start(@host,@port)
-          response = connection.get(@uri)
-          # TODO(mkr): add a good output message
-          return false unless response.code >= 200 && response.code < 300
+          socket = TCPSocket.new(@host,@port)
+          socket.close
         rescue
           # TODO(mkr): add a good output message
           return false

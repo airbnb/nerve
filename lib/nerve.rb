@@ -3,12 +3,24 @@ require 'nerve/base'
 
 require 'zk'
 
-require_relative './nerve/health_checks/tcp'
-require_relative './nerve/health_checks/http'
+require_relative './nerve/service_checks/tcp'
+require_relative './nerve/service_checks/http'
 
 ## a config might look like this:
 config = {
   'instance_name' => '$instance_id',
+  'voter_status' => {
+    'up' => {
+      'metric' => 'cpuidle',
+      'threshold' => '30',
+      'condition' => '<',
+    }
+    'down' => {
+      'metric' => 'cpuidle',
+      'threshold' => '70',
+      'condition' => '>'
+    },
+  },
   'services' => {
     'monorails' =>{
       'port' => '80',
@@ -24,8 +36,8 @@ config = {
   },  
 }
 
-## sample health check could look something like:
-health_checks = {
+## sample service check could look something like:
+service_checks = {
   'monorails_tcp' => {
     'type' => 'tcp',
     'port' => '80',
@@ -43,7 +55,7 @@ module Nerve
   class Nerve < Base
     #TODO(mkr): we should add an option for the interface and default
     #to 0.0.0.0
-    attr_reader :instance_id, :service_name, :service_port, :zk_path, :health_checks
+    attr_reader :instance_id, :service_name, :service_port, :zk_path, :service_checks
     def initialize(opts={})
       # Stringify keys :/
       options = options.inject({}) { |h,(k,v)| h[k.to_s] = v; h }
@@ -64,19 +76,19 @@ module Nerve
       @failure_threshold = 2 
       @exiting = False
 
-      # create health check objects
-      opts['health_checks'] ||= {}
-      @health_checks=[]
-      opts['health_checks'].each do |name,params|
-        raise ArgumentError, "missing health check type for #{name}" unless params['type']
-        health_check_class_name = params['type'].split("_").map(&:capitalize).join
-        health_check_class_name << "HealthCheck"
+      # create service check objects
+      opts['service_checks'] ||= {}
+      @service_checks=[]
+      opts['service_checks'].each do |name,params|
+        raise ArgumentError, "missing service check type for #{name}" unless params['type']
+        service_check_class_name = params['type'].split("_").map(&:capitalize).join
+        service_check_class_name << "ServiceCheck"
         begin
-          health_check_class = Nerve::HealthCheck.const_get health_check_class_name
+          service_check_class = Nerve::ServiceCheck.const_get service_check_class_name
         rescue NameError
-          raise ArgumentError, "invalid health check type: #{params['type']}"
+          raise ArgumentError, "invalid service check type: #{params['type']}"
         end
-        @health_checks << health_check_class.new(params)
+        @service_checks << service_check_class.new(params)
       end
     end
 
@@ -115,20 +127,20 @@ module Nerve
       end
     end
     
-    def run_health_checks
+    def run_service_checks
       # TODO(mkr): could consider doing this in parallel
-      @health_checks.each do |health_check|
-        return false unless health_check.check
+      @service_checks.each do |service_check|
+        return false unless service_check.check
       end
       retrun true
     end
 
     def register_service
-      return unless (@service_port && run_health_checks)
+      return unless (@service_port && run_service_checks)
 
       failures = @failure_threshold
       while not @exiting
-        passed = run_health_check(check_type)
+        passed = run_service_checks
         if passed
           failures -= 1 unless failures == 0
         else
