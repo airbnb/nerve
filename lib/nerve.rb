@@ -90,12 +90,8 @@ module Nerve
     end
 
     def create_ephemeral_node(path, data="")
-      begin
-        @zk.delete(path)
-      rescue ZK::Exceptions::NoNode
-      end
-
-      @zk.create(path, {:data=>data.to_json})
+      @zk.delete(path, :ignore => :no_node)
+      @zk.create(path, :data => data.to_json)
     end
   end
 end
