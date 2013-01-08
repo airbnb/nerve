@@ -10,13 +10,13 @@ require_relative './nerve/service_checks/http'
 config = {
   'instance_name' => '$instance_id',
   'voter_status' => {
+    'metric' => 'cpuidle',
+    'hold' => '5',
     'up' => {
-      'metric' => 'cpuidle',
       'threshold' => '30',
       'condition' => '<',
     }
     'down' => {
-      'metric' => 'cpuidle',
       'threshold' => '70',
       'condition' => '>'
     },
