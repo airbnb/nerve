@@ -36,37 +36,18 @@ config = {
   },  
 }
 
-## sample service check could look something like:
-service_checks = {
-  'monorails_tcp' => {
-    'type' => 'tcp',
-    'port' => '80',
-  },
-  'monorails_/health' => {
-    'type' => 'http',
-    'port' => 80,
-    'uri'=> '/health',
-  },
-}
-
 
 module Nerve
   # Your code goes here...
   class Nerve < Base
-    #TODO(mkr): we should add an option for the interface and default
-    #to 0.0.0.0
     attr_reader :instance_id, :service_name, :service_port, :zk_path, :service_checks
     def initialize(opts={})
-      # Stringify keys :/
-      options = options.inject({}) { |h,(k,v)| h[k.to_s] = v; h }
-      
+
+      # required options
       %w{instance_id service_name zk_path}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
+        instance_variable_set("@#{required}",opts['required'])
       end
-        
-      @zk_path = opts['zk_path']
-      @instance_id = opts['instance_id']
-      @service_name = opts['service_name']
       
       # optional -- if present, will create service node
       @service_port = opts['service_port']
