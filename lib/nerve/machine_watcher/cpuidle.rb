@@ -1,25 +1,24 @@
 module Nerve
   module MachineCheck
     class CpuidleMachineCheck
-
+      include Logging
       def initialize(opts={})
-        puts "creating machine check"
+        log.debug "creating machine check"
         %w{hold up down}.each do |required|
           raise ArgumentError, "you need to provide #{required}" unless opts[required]
           instance_variable_set("@#{required}",opts[required])
         end
-        
+
         @exiting = false
-        puts "creating polling thread"
         Thread.new{poll}
-        puts "returning from machine watcher init"
+        log.debug "returning from cpuidle check init"
       end
 
-      
       def poll
+        log.debug "creating polling thread"
         # keep the last hold time of info
         @buffer = RingBuffer.new(@hold)
-        while not @exiting
+        until defined?(EXIT)
           @buffer.push get_idle
           sleep 1
         end

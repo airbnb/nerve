@@ -1,0 +1,2 @@
+export DATA_BAG_DIR=/Users/martin/Dropbox/airbnb/src/chef/data_bags
+export COOKBOOK_DIR=/Users/martin/Dropbox/airbnb/src/chef/cookbooks

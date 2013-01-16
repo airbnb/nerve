@@ -1,8 +1,11 @@
 module Nerve
   class ServiceWatcher
-    attr_reader :name, :port, :host, :zk_path, :service_checks
+
+    include Logging
+
     def initialize(opts={})
-      %w{name port zk_path instance_id}.each do |required|
+      log.debug "creating service watcher object"
+      %w{port zk_path instance_id name}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts['required'])
       end
@@ -22,6 +25,7 @@ module Nerve
     end
 
     def run()
+      log.info "watching service #{@name}"
       @zk = ZKHelper.new(@zk_path)
       @zk.delete(@instance_id)
       ring_buffer = RingBuffer(@threshold)
@@ -36,8 +40,11 @@ module Nerve
           else
             @zk.ensure_ephemeral_node(@instance_id)
           end
-        ensure
-          EXIT = true
+        rescue Object => o
+          log.error "hit an error, setting exit: "
+          log.error o.inspect
+          log.error o.backtrace
+          self.class.const_set(:EXIT,true)
         end
       end
     end
@@ -48,6 +55,6 @@ module Nerve
       end
       return true
     end
-    
+
   end
 end
