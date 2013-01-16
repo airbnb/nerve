@@ -84,7 +84,7 @@ module Nerve
 
     def run
       puts "starting run..."
-      @zk = ZK.new(@zk_path)
+      @zk = ZKHelper()
       begin
         puts "registering machine..."
         register_thread = Thread.new{register_machine}
