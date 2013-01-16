@@ -16,3 +16,7 @@ test/tmp
 test/version_tmp
 tmp
 *.sw?
+\#*\#
+.\#*
+vendor
+.vagrant
