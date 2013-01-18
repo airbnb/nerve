@@ -18,26 +18,33 @@ module Nerve
         log.debug "creating polling thread"
         # keep the last hold time of info
         @buffer = RingBuffer.new(@hold)
-        until defined?(EXIT)
-          @buffer.push get_idle
+        until $EXIT
+          current_idle = get_idle
+          log.debug "current_idle is #{current_idle}"
+          @buffer.push current_idle
           sleep 1
         end
       end
 
       def vote_up?
         # TODO(mkr): verify this works ok. it should.
-        eval %{ #{@buffer.average} #{@up.condition} #{@up.threshold} }
+        eval %{ #{@buffer.average} #{@up['condition']} #{@up['threshold']} }
       end
 
       def vote_down?
         # TODO(mkr): verify this works ok. it should.
-        eval %{ #{@buffer.average} #{@down.condition} #{@down.threshold} }
+        eval %{ #{@buffer.average} #{@down['condition']} #{@down['threshold']} }
       end
 
       def vote
-        return 0 unless @bufffer and @buffer.size == @hold
+        if @buffer.include?(nil)
+          log.debug "buffer is not filled. still #{@buffer.count{|i| i==nil}} empty elements"
+          return 0
+        end
+
         up = vote_up?
-        down = vode_down?
+        down = vote_down?
+        log.debug "upvote is #{up} and downvote is #{down}. Average is #{@buffer.average}"
         return 0 if up and down
         return 1 if up
         return -1 if down

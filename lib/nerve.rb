@@ -55,6 +55,14 @@ module Nerve
 
     def initialize(opts={})
 
+      # set global variable for exit signal
+      $EXIT = false
+
+      # trap int signal and set exit to true
+      trap('INT') do
+        $EXIT = true
+      end
+
       log.info "starting nerve"
 
       # required options
@@ -63,6 +71,7 @@ module Nerve
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts[required])
       end
+
 
       # create service watcher objects
       log.debug "creating service watchers"
@@ -84,19 +93,19 @@ module Nerve
       begin
         children = []
         log.debug "launching machine check thread"
-        children << Thread.new{@machine_check.run}
+#        children << Thread.new{@machine_check.run}
 
-        # log.debug "launching service check threads"
-        # @service_watchers.each do |watcher|
-        #   children << Thread.new{watcher.run}
-        # end
+        log.debug "launching service check threads"
+        @service_watchers.each do |watcher|
+          children << Thread.new{watcher.run}
+        end
 
         log.info "waiting for children"
         children.each do |child|
           child.join
         end
       ensure
-        self.class.const_set(:EXIT,true)
+        $EXIT = true
       end
       log.info "ending run"
     end

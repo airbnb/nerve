@@ -15,7 +15,9 @@ module Nerve
     end
 
     def delete(path)
+      log.debug "trying to delete #{path}"
       @zk.delete(path, :ignore => :no_node)
+      log.debug "path #{path} deleted"
     end
 
     def create_ephemeral_node(node, data="")
@@ -23,14 +25,16 @@ module Nerve
       data = format_data(data)
       log.debug "creating ephemeral node at '#{node}' with #{data}"
       @zk.delete(node, :ignore => :no_node)
-      create_path(File.dirname(node))
+      # TODO(mkr): not sure if we should do this, as we are chrooting
+      # to the base dir
+      # create_path(File.dirname(node))
       @zk.create(node, :data => data.to_json, :mode => :ephemeral)
     end
 
     def ensure_ephemeral_node(node,data='')
+      log.debug "ensuring ephemeral node #{node} exists"
       node = prepend_slash(node)
       data = format_data(data)
-      log.debug "ensuring ephemeral node #{node_name} exists"
       @zk.create(node, :data => data.to_json, :mode => :ephemeral, :ignore => :node_exists)
     end
 

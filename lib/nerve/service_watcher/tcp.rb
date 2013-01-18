@@ -3,6 +3,7 @@ module Nerve
     require 'socket'
     
     class TcpServiceCheck
+      include Logging
       def initialize(opts={})
         raise ArgumentError unless opts['port']
         @port = opts['port']
@@ -10,6 +11,7 @@ module Nerve
       end
 
       def check?
+        log.debug "making tcp connection to #{@host.inspect} and #{@port.inspect}"
         # catch all errors
         begin
           # TODO(mkr): add a timeout

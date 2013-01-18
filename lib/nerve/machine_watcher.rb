@@ -28,11 +28,13 @@ module Nerve
       @zk = ZKHelper.new(@zk_path)
       @zk.create_ephemeral_node(@instance_id,{'vote'=>0})
 
-      until defined?(EXIT)
+      until $EXIT
         begin
           @zk.ping?
           vote = @machine_check.vote
+          log.debug "current vote is #{vote}"
           if vote != @previous_vote
+            log.debug "vote changed!"
             @zk.update(@instance_id,{vote: vote})
           end
 
@@ -42,7 +44,7 @@ module Nerve
           log.error "hit an error, setting exit: "
           log.error o.inspect
           log.error o.backtrace
-          self.class.const_set(:EXIT,true)
+          $EXIT = true
         end
       end
       log.info "ending machine watch"
