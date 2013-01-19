@@ -1,10 +1,11 @@
-require 'nerve/version'
-require 'nerve/base'
 require 'logger'
 require 'json'
+require 'timeout'
 
 require 'zk'
 
+require_relative './nerve/version'
+require_relative './nerve/base'
 require_relative './nerve/log'
 require_relative './nerve/ring_buffer'
 require_relative './nerve/zk_helper'
@@ -13,7 +14,6 @@ require_relative './nerve/service_watcher/tcp'
 require_relative './nerve/service_watcher/http'
 require_relative './nerve/machine_watcher'
 require_relative './nerve/machine_watcher/cpuidle'
-
 
 
 ## a config might look like this:
@@ -49,7 +49,7 @@ config = {
 
 module Nerve
   # Your code goes here...
-  class Nerve < Base
+  class Nerve
 
     include Logging
 
@@ -59,8 +59,10 @@ module Nerve
       $EXIT = false
 
       # trap int signal and set exit to true
-      trap('INT') do
-        $EXIT = true
+      %w{INT TERM}.each do |signal|
+        trap(signal) do
+          $EXIT = true
+        end
       end
 
       log.info "starting nerve"
@@ -93,7 +95,7 @@ module Nerve
       begin
         children = []
         log.debug "launching machine check thread"
-#        children << Thread.new{@machine_check.run}
+        children << Thread.new{@machine_check.run}
 
         log.debug "launching service check threads"
         @service_watchers.each do |watcher|
