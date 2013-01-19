@@ -14,7 +14,7 @@ module Nerve
       begin
         yield
       rescue Object => error
-        log.error "ignoring error #{error.inspect}"
+        log.debug "ignoring error #{error.inspect}"
         return false
       end
       return true
