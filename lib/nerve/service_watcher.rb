@@ -1,6 +1,6 @@
 module Nerve
   class ServiceWatcher
-
+    include Base
     include Logging
 
     def initialize(opts={})
@@ -12,7 +12,7 @@ module Nerve
       @host = opts['host'] ? opts['host'] : '0.0.0.0'
       # TODO(mkr): maybe take these as inputs
       @threshold = 2
-      @sleep = 1
+      @sleep = 0.5
       @service_checks = []
       opts['checks'] ||= {}
       opts['checks'].each do |type,params|
@@ -32,25 +32,39 @@ module Nerve
 
     def run()
       log.info "watching service #{@name}"
-      @zk = ZKHelper.new(@zk_path)
+      @zk = ZKHelper.new({
+                           'path' => @zk_path,
+                           'key' => @instance_id,
+                           'data' => {'host' => @host, 'port' => @port},
+                         })
       log.debug "created Zk handle"
-      @zk.delete(@instance_id)
-      log.debug "creating ring buffer"
+
       ring_buffer = RingBuffer.new(@threshold)
-      @threshold.times { ring_buffer.push false }
+      if check?
+        @threshold.times { ring_buffer.push true }
+        log.debug "initial check succeeded; initialized ring buffer to true"
+      else
+        @threshold.times { ring_buffer.push false }
+        log.debug "initial check failed; initialized ring buffer to false"
+      end
+
+      was_up = false
 
       log.debug "about to start loop"
       until $EXIT
         begin
           log.debug "starting loop"
           @zk.ping?
-          check = check?
-          log.debug "check returned #{check.inspect} for #{@name}"
           ring_buffer.push check?
-          if ring_buffer.include?(false)
-            @zk.delete(@instance_id)
-          else
-            @zk.ensure_ephemeral_node(@instance_id)
+          is_up = ring_buffer.include?(false) ? false : true
+          log.debug "current service status for #{@name} is #{is_up.inspect}"
+          if is_up != was_up
+            if is_up
+              @zk.report_up
+            else
+              @zk.report_down
+            end
+            was_up = is_up
           end
           sleep @sleep
         rescue Object => o
@@ -66,7 +80,6 @@ module Nerve
     def check?
       @service_checks.each do |check|
         check_status = check.check?
-
         return false unless check_status
       end
       return true

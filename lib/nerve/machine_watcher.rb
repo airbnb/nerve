@@ -1,5 +1,6 @@
 module Nerve
   class MachineWatcher
+    include Base
     include Logging
     def initialize(opts={})
       log.debug 'creating machine watcher'
@@ -19,26 +20,28 @@ module Nerve
       end
 
       @machine_check = machine_check_class.new(opts)
-      @exiting = false
-      @previous_vote = nil
     end
 
     def run
       log.info 'watching machine'
-      @zk = ZKHelper.new(@zk_path)
-      @zk.create_ephemeral_node(@instance_id,{'vote'=>0})
+      @zk = ZKHelper.new({
+                           'path' => @zk_path,
+                           'key' => @instance_id,
+                           'data' => {'vote'=>0},
+                         })
+      @zk.report_up
+      previous_vote = 0
 
       until $EXIT
         begin
           @zk.ping?
+          @machine_check.poll
           vote = @machine_check.vote
           log.debug "current vote is #{vote}"
-          if vote != @previous_vote
-            log.debug "vote changed!"
-            @zk.update(@instance_id,{vote: vote})
+          if vote != previous_vote
+            @zk.update_data({'vote'=>vote})
+            previous_vote = vote
           end
-
-          @previous_vote = vote
           sleep 1
         rescue Object => o
           log.error "hit an error, setting exit: "
