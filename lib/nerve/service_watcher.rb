@@ -39,15 +39,15 @@ module Nerve
                          })
       log.debug "created Zk handle"
 
+      log.info "starting to watch service #{@name}"
       ring_buffer = RingBuffer.new(@threshold)
       if check?
         @threshold.times { ring_buffer.push true }
-        log.debug "initial check succeeded; initialized ring buffer to true"
+        log.info "initial check succeeded, bring up service #{@name}"
       else
         @threshold.times { ring_buffer.push false }
-        log.debug "initial check failed; initialized ring buffer to false"
+        log.info "initial check failed, bringing down service #{@name}"
       end
-
       was_up = false
 
       log.debug "about to start loop"
@@ -55,18 +55,20 @@ module Nerve
         begin
           log.debug "starting loop"
           @zk.ping?
-          ring_buffer.push check?
           is_up = ring_buffer.include?(false) ? false : true
           log.debug "current service status for #{@name} is #{is_up.inspect}"
           if is_up != was_up
             if is_up
               @zk.report_up
+              log.info "service #{@name} is now up"
             else
               @zk.report_down
+              log.warn "service #{@name} is now down"
             end
             was_up = is_up
           end
           sleep @sleep
+          ring_buffer.push check?
         rescue Object => o
           log.error "hit an error, setting exit: "
           log.error o.inspect

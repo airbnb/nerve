@@ -31,6 +31,7 @@ module Nerve
                          })
       @zk.report_up
       previous_vote = 0
+      log.info "starting machine watch. vote is 0"
 
       until $EXIT
         begin
@@ -41,6 +42,7 @@ module Nerve
           if vote != previous_vote
             @zk.update_data({'vote'=>vote})
             previous_vote = vote
+            log.info "vote changed to #{vote}"
           end
           sleep 1
         rescue Object => o
