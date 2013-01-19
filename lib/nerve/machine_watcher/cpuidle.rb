@@ -8,22 +8,16 @@ module Nerve
           raise ArgumentError, "you need to provide #{required}" unless opts[required]
           instance_variable_set("@#{required}",opts[required])
         end
-
-        @exiting = false
-        Thread.new{poll}
+        @buffer = RingBuffer.new(@hold)
         log.debug "returning from cpuidle check init"
       end
 
       def poll
-        log.debug "creating polling thread"
+        log.debug "calling poll"
         # keep the last hold time of info
-        @buffer = RingBuffer.new(@hold)
-        until $EXIT
-          current_idle = get_idle
-          log.debug "current_idle is #{current_idle}"
-          @buffer.push current_idle
-          sleep 1
-        end
+        current_idle = get_idle
+        log.debug "current_idle is #{current_idle}"
+        @buffer.push current_idle
       end
 
       def vote_up?
