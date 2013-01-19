@@ -9,12 +9,12 @@ module Nerve
         instance_variable_set("@#{required}",opts[required])
         log.debug "set @#{required} to #{opts[required]}"
       end
-      save_data(opts['data'] ? opts['data'] : '')
+      @data = parse_data(opts['data'] ? opts['data'] : '')
       @key.insert(0,'/') unless @key[0] == '/'
 
-      log.info "waiting to connect to zookeeper"
+      log.info "waiting to connect to zookeeper at #{@path}"
       @zk = ZK.new(@path)
-      log.debug "created zk connection to #{@path}"
+      log.info "created zk connection to #{@path}"
     end
 
     def report_up()
@@ -26,7 +26,7 @@ module Nerve
     end
 
     def update_data(new_data='')
-      save_data(new_data)
+      @data = parse_data(new_data)
       zk_save
     end
 
@@ -41,20 +41,18 @@ module Nerve
     end
 
     def zk_save
+      log.debug "writing to zk at #{@key} with #{@data.inspect}"
+      log.debug "@data.class is #{@data.class}"
       begin
-        @zk.set(@key,format_data(data))
+        @zk.set(@key,@data)
       rescue ZK::Exceptions::NoNode => e
-        @zk.create(node,:data => @data, :mode => :ephemeral)
+        @zk.create(@key,:data => @data, :mode => :ephemeral)
       end
     end
 
-    def save_data(data)
-      case data.class
-      when Hash
-        @data = data.to_json
-      else
-        @data = data
-      end
+    def parse_data(data)
+      return data if data.class == String
+      return data.to_json
     end
 
   end
