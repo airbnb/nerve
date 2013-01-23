@@ -85,5 +85,8 @@ module Nerve
         end
       end
     end
+
+    CHECKS ||= {}
+    CHECKS['cpuidle'] = CpuidleMachineCheck
   end
 end

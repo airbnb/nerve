@@ -1,12 +1,6 @@
 require_relative './machine_watcher/cpuidle'
 
 module Nerve
-  module MachineCheck
-    CHECKS = {
-        'cpuidle' => CpuidleMachineCheck,
-    }
-  end
-
   class MachineWatcher
     include Base
     include Logging
