@@ -9,13 +9,15 @@ module Nerve
     def initialize(opts={})
       log.debug "creating service watcher object"
       %w{port host zk_path instance_id name}.each do |required|
-        raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
-        instance_variable_set("@#{required}",opts[required])
+        raise ArgumentError, "missing required argument #{required} for new service watcher" unless opts[required]
+        instance_variable_set("@#{required}", opts[required])
       end
-      @host = opts['host'] ? opts['host'] : '0.0.0.0'
-      # TODO(mkr): maybe take these as inputs
-      @threshold = 2
-      @sleep = 0.5
+
+      # optional parameters control how checks are made
+      @threshold = opts['failure_threshold'] || 2
+      @check_interval = opts['check_interval'] || 0.5
+
+      # instantiate the checks for this watcher
       @service_checks = []
       opts['checks'] ||= {}
       opts['checks'].each do |type,params|
@@ -27,18 +29,23 @@ module Nerve
 
         @service_checks << service_check_class.new(params.merge({'port' => @port, 'host' => @host}))
       end
+
+      log.debug "created service watcher for #{@name} with #{@service_checks.size} checks"
     end
 
     def run()
-      log.info "watching service #{@name}"
+      log.info "Starting to watch service #{@name}"
+
+      # create zookeeper connection
       @zk = ZKHelper.new({
                            'path' => @zk_path,
                            'key' => @instance_id,
                            'data' => {'host' => @host, 'port' => @port},
                          })
-      log.debug "created Zk handle"
+      log.debug "created Zk handle for service #{@name}"
 
-      log.info "starting to watch service #{@name}"
+      # run the initial check
+      log.info "running initial check for service #{@name}"
       ring_buffer = RingBuffer.new(@threshold)
       if check?
         @threshold.times { ring_buffer.push true }
@@ -47,13 +54,17 @@ module Nerve
         @threshold.times { ring_buffer.push false }
         log.info "initial check failed, bringing down service #{@name}"
       end
-      was_up = false
 
-      log.debug "about to start loop"
+      # the main loop
+      was_up = false
+      log.debug "about to start main loop"
       until $EXIT
         begin
-          log.debug "starting loop"
+          log.debug "loop service watcher #{@name}"
+
           @zk.ping?
+
+          # what is the status of the service?
           is_up = ring_buffer.include?(false) ? false : true
           log.debug "current service status for #{@name} is #{is_up.inspect}"
           if is_up != was_up
@@ -66,7 +77,9 @@ module Nerve
             end
             was_up = is_up
           end
-          sleep @sleep
+
+          # wait to run more checks
+          sleep @check_interval
           ring_buffer.push check?
         rescue Object => o
           log.error "hit an error, setting exit: "
