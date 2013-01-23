@@ -8,13 +8,15 @@ module Nerve
           raise ArgumentError, "you need to provide #{required}" unless opts[required]
           instance_variable_set("@#{required}",opts[required])
         end
+
         @buffer = RingBuffer.new(@hold)
-        log.debug "returning from cpuidle check init"
+        @no_idle = false
+
+        log.debug "cpucheck initialized successfully"
       end
 
       def poll
-        log.debug "calling poll"
-        # keep the last hold time of info
+        log.debug "polling cpuidle..."
         current_idle = get_idle
         log.debug "current_idle is #{current_idle}"
         @buffer.push current_idle
@@ -46,12 +48,26 @@ module Nerve
       end
 
       def get_idle
-        # TODO(mkr): check for non linux systems
-        metrics = `cat /proc/stat | grep '^cpu '`.split
+        begin
+          metrics = File.readlines('/proc/stat')
+        rescue Errno::ENOENT
+          log.warn "Cannot get CPU idle info; no /proc/stat" unless @no_idle
+          @no_idle = true
+          return 100
+        rescue
+          log.warn "Error reading /proc/stat"
+          return 100
+        end
+
+        metrics = metrics.find{|line| line.slice(0,4) == "cpu "}.split
         metrics.shift
         metrics.map! {|e| e.to_i}
+
         idle = metrics[3]
         total = metrics.inject(:+)
+
+        # we need to look at two metrics for instanteneous rather than cumulative
+        # the returned idle is over the period from previous to this reading
         if @previous_total and @previous_idle
           diff_total = total - @previous_total
           diff_idle = idle - @previous_idle
@@ -68,7 +84,6 @@ module Nerve
           return get_idle
         end
       end
-
     end
   end
 end
