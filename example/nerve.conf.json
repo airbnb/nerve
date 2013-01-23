@@ -1,0 +1,28 @@
+{
+  "instance_id": "mymachine",
+  "machine_check": {
+    "metric": "cpuidle",
+    "hold": "60",
+    "up": {
+      "threshold": "30",
+      "condition": "<"
+    },
+    "down": {
+      "threshold": "70",
+      "condition": ">"
+    },
+    "zk_path": "localhost:2181/nerve/services/awesome_service/machines"
+  },
+  "service_checks": {
+    "your_service": {
+      "port": 3000,
+      "host": "127.0.0.1",
+      "zk_path": "localhost:2181/nerve/services/awesome_service/services",
+      "checks": {
+        "http": {
+          "uri": "/health"
+        }
+      }
+    }
+  }
+}
