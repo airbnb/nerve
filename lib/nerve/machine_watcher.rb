@@ -1,9 +1,19 @@
+require_relative './machine_watcher/cpuidle'
+
 module Nerve
+  module MachineCheck
+    CHECKS = {
+        'cpuidle' => CpuidleMachineCheck,
+    }
+  end
+
   class MachineWatcher
     include Base
     include Logging
+
     def initialize(opts={})
       log.debug 'creating machine watcher'
+
       # required inputs
       %w{metric zk_path instance_id}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
@@ -11,12 +21,11 @@ module Nerve
         log.debug "set @#{required} to #{opts[required]}"
       end
 
-      machine_check_class_name = @metric.split('_').map(&:capitalize).join
-      machine_check_class_name << 'MachineCheck'
       begin
-        machine_check_class = MachineCheck.const_get(machine_check_class_name)
+        machine_check_class = MachineCheck::CHECKS[@metric]
       rescue
-        raise ArgumentError, "machine check #{@metric} is not valid"
+        raise ArgumentError,
+          "invalid machine check metric #{@metric}; valid checks: #{MachineCheck::CHECKS.keys.join(',')}"
       end
 
       @machine_check = machine_check_class.new(opts)

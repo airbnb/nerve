@@ -13,7 +13,6 @@ require_relative './nerve/service_watcher'
 require_relative './nerve/service_watcher/tcp'
 require_relative './nerve/service_watcher/http'
 require_relative './nerve/machine_watcher'
-require_relative './nerve/machine_watcher/cpuidle'
 
 module Nerve
   # Your code goes here...
