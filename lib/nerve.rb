@@ -15,38 +15,6 @@ require_relative './nerve/service_watcher/http'
 require_relative './nerve/machine_watcher'
 require_relative './nerve/machine_watcher/cpuidle'
 
-
-## a config might look like this:
-config = {
-  'instance_id' => '$instance_id',
-  'voter_status' => {
-    'metric' => 'cpuidle',
-    'hold' => '60',
-    'up' => {
-      'threshold' => '30',
-      'condition' => '<',
-    },
-    'down' => {
-      'threshold' => '70',
-      'condition' => '>'
-    },
-  },
-  'service_checks' => {
-    'monorails' =>{
-      'port' => '80',
-      'host' => '0.0.0.0',
-      'zk_path' => '',
-      'checks' => {
-        'tcp' => {},
-        'http' => {
-          'uri' => '/health',
-        },
-      },
-    },
-  },
-}
-
-
 module Nerve
   # Your code goes here...
   class Nerve
