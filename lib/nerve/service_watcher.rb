@@ -1,3 +1,6 @@
+require_relative './service_watcher/tcp'
+require_relative './service_watcher/http'
+
 module Nerve
   class ServiceWatcher
     include Base
@@ -16,17 +19,13 @@ module Nerve
       @service_checks = []
       opts['checks'] ||= {}
       opts['checks'].each do |type,params|
-        service_check_class_name = type.split("_").map(&:capitalize).join
-        service_check_class_name << "ServiceCheck"
         begin
-          service_check_class = ServiceCheck.const_get(service_check_class_name)
+          service_check_class = ServiceCheck::CHECKS[type]
         rescue
-          raise ArgumentError, "invalid service check: #{type}"
+          raise ArgumentError, "invalid service check type #{type}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
         end
-        @service_checks << service_check_class.new(params.merge({
-                                                                  'port' => @port,
-                                                                  'host' => @host,
-                                                                }))
+
+        @service_checks << service_check_class.new(params.merge({'port' => @port, 'host' => @host}))
       end
     end
 

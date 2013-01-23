@@ -10,8 +10,6 @@ require_relative './nerve/log'
 require_relative './nerve/ring_buffer'
 require_relative './nerve/zk_helper'
 require_relative './nerve/service_watcher'
-require_relative './nerve/service_watcher/tcp'
-require_relative './nerve/service_watcher/http'
 require_relative './nerve/machine_watcher'
 
 module Nerve
