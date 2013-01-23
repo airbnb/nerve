@@ -23,7 +23,9 @@ module Nerve
         end
         return return_status
       end
-
     end
+
+    CHECKS ||= {}
+    CHECKS['tcp'] = TcpServiceCheck
   end
 end

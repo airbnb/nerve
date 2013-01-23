@@ -30,7 +30,9 @@ module Nerve
         log.debug "health check was #{return_status}"
         return return_status
       end
-
     end
+
+    CHECKS ||= {}
+    CHECKS['http'] = HttpServiceCheck
   end
 end
