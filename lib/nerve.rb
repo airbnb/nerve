@@ -5,47 +5,12 @@ require 'timeout'
 require 'zk'
 
 require_relative './nerve/version'
-require_relative './nerve/base'
+require_relative './nerve/utils'
 require_relative './nerve/log'
 require_relative './nerve/ring_buffer'
-require_relative './nerve/zk_helper'
+require_relative './nerve/reporter'
 require_relative './nerve/service_watcher'
-require_relative './nerve/service_watcher/tcp'
-require_relative './nerve/service_watcher/http'
 require_relative './nerve/machine_watcher'
-require_relative './nerve/machine_watcher/cpuidle'
-
-
-## a config might look like this:
-config = {
-  'instance_id' => '$instance_id',
-  'voter_status' => {
-    'metric' => 'cpuidle',
-    'hold' => '60',
-    'up' => {
-      'threshold' => '30',
-      'condition' => '<',
-    },
-    'down' => {
-      'threshold' => '70',
-      'condition' => '>'
-    },
-  },
-  'service_checks' => {
-    'monorails' =>{
-      'port' => '80',
-      'host' => '0.0.0.0',
-      'zk_path' => '',
-      'checks' => {
-        'tcp' => {},
-        'http' => {
-          'uri' => '/health',
-        },
-      },
-    },
-  },
-}
-
 
 module Nerve
   # Your code goes here...

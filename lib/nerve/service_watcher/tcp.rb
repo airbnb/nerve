@@ -3,27 +3,35 @@ module Nerve
     require 'socket'
 
     class TcpServiceCheck
-      include Base
+      include Utils
       include Logging
       def initialize(opts={})
         raise ArgumentError unless opts['port']
+
         @port = opts['port']
-        @host = opts['host'] ? opts['host'] : '0.0.0.0'
+        @host = opts['host'] || '0.0.0.0'
+        @timeout = opts['timeout'] || 0.1
       end
 
       def check?
-        log.debug "making tcp connection to #{@host.inspect} and #{@port.inspect}"
+        name = "#{@host}:#{@port}"
+        log.debug "making tcp connection to #{name}"
+
         # catch all errors
         return_status = ignore_errors do
-          # TODO(mkr): add a timeout
-          Timeout::timeout(0.1) do
+          Timeout::timeout(@timeout) do
             socket = TCPSocket.new(@host,@port)
             socket.close
+            return True
           end
         end
+
+        log.debug "tcp check #{name} returned #{return_status}"
         return return_status
       end
-
     end
+
+    CHECKS ||= {}
+    CHECKS['tcp'] = TcpServiceCheck
   end
 end
