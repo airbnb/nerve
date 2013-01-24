@@ -9,6 +9,13 @@ module Nerve
           instance_variable_set("@#{required}",opts[required])
         end
 
+        # validate the voting conditions
+        [@up, @down].each do |cond|
+          raise ArgumentError, "Invalid condition #{cond['condition']} in machine check" \
+            unless ['<', '<=', '>', '>='].include? cond['condition']
+          cond['threshold'] = cond['threshold'].to_i
+        end
+
         @buffer = RingBuffer.new(@hold)
         @no_idle = false
 
@@ -23,13 +30,11 @@ module Nerve
       end
 
       def vote_up?
-        # TODO(mkr): verify this works ok. it should.
-        eval %{ #{@buffer.average} #{@up['condition']} #{@up['threshold']} }
+        return @buffer.average.send(@up['condition'], @up['threshold'])
       end
 
       def vote_down?
-        # TODO(mkr): verify this works ok. it should.
-        eval %{ #{@buffer.average} #{@down['condition']} #{@down['threshold']} }
+        return @buffer.average.send(@up['condition'], @up['threshold'])
       end
 
       def vote
