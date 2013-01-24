@@ -34,7 +34,7 @@ module Nerve
       end
 
       def vote_down?
-        return @buffer.average.send(@up['condition'], @up['threshold'])
+        return @buffer.average.send(@down['condition'], @down['threshold'])
       end
 
       def vote
