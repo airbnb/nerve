@@ -21,13 +21,13 @@ module Nerve
         yield
       rescue Object => e
         if retries < retry_times
-          log.error "zk_helper encountered an error: #{e.inspect}"
+          log.error "retry: encountered an error: #{e.inspect}"
           log.error "waiting a sec, then retrying..."
           sleep 1
           retries += 1
           retry
         else
-          log.error "zk_helper encountered a fatal error:"
+          log.error "retry: encountered a fatal error:"
           log.error e.inspect
           log.error e.backtrace
           raise e
