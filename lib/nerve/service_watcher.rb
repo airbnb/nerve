@@ -37,7 +37,7 @@ module Nerve
       log.info "Starting to watch service #{@name}"
 
       # create zookeeper connection
-      @zk = ZKHelper.new({
+      @reporter = Reporter.new({
                            'path' => @zk_path,
                            'key' => @instance_id,
                            'data' => {'host' => @host, 'port' => @port},
@@ -62,17 +62,17 @@ module Nerve
         begin
           log.debug "loop service watcher #{@name}"
 
-          @zk.ping?
+          @reporter.ping?
 
           # what is the status of the service?
           is_up = ring_buffer.include?(false) ? false : true
           log.debug "current service status for #{@name} is #{is_up.inspect}"
           if is_up != was_up
             if is_up
-              @zk.report_up
+              @reporter.report_up
               log.info "service #{@name} is now up"
             else
-              @zk.report_down
+              @reporter.report_down
               log.warn "service #{@name} is now down"
             end
             was_up = is_up

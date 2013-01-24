@@ -1,5 +1,5 @@
 module Nerve
-  class ZKHelper
+  class Reporter
     include Utils
     include Logging
 
@@ -17,6 +17,7 @@ module Nerve
       log.info "created zk connection to #{@path}"
     end
 
+    #TODO(is): need to check ownership of znodes to resolve name conflicts
     def report_up()
       zk_save
     end

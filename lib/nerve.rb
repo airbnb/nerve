@@ -8,7 +8,7 @@ require_relative './nerve/version'
 require_relative './nerve/utils'
 require_relative './nerve/log'
 require_relative './nerve/ring_buffer'
-require_relative './nerve/zk_helper'
+require_relative './nerve/reporter'
 require_relative './nerve/service_watcher'
 require_relative './nerve/machine_watcher'
 
