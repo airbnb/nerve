@@ -11,23 +11,28 @@ module Nerve
             opts[required]
           instance_variable_set("@#{required}",opts[required])
         end
-        @host = opts['host'] ? opts['host'] : '0.0.0.0'
+
+        @host = opts['host'] || '0.0.0.0'
+        @timeout = opts['timeout'] || 0.1
       end
 
       def check?
+        name = "#{@host}:#{@port}#{@uri}"
+        log.debug "running health check #{name}"
+
         # ignore all errors
         return_status = ignore_errors do
-          Timeout::timeout(0.1) do
+          Timeout::timeout(@timeout) do
             connection = Net::HTTP.start(@host,@port)
             response = connection.get(@uri)
-            unless (response.code.to_i >= 200 && response.code.to_i < 300)
-              log.debug "response code was not a 200"
-              return false
-            end
-            return true
+
+            log.debug "check #{name} got response code #{response.code}"
+            return true if response.code.to_i >= 200 && response.code.to_i < 300
+            return false
           end
         end
-        log.debug "health check was #{return_status}"
+
+        log.debug "check #{name} returned #{return_status}"
         return return_status
       end
     end
