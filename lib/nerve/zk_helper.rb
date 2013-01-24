@@ -1,6 +1,6 @@
 module Nerve
   class ZKHelper
-    include Base
+    include Utils
     include Logging
 
     def initialize(opts)

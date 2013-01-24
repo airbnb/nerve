@@ -5,7 +5,7 @@ require 'timeout'
 require 'zk'
 
 require_relative './nerve/version'
-require_relative './nerve/base'
+require_relative './nerve/utils'
 require_relative './nerve/log'
 require_relative './nerve/ring_buffer'
 require_relative './nerve/zk_helper'

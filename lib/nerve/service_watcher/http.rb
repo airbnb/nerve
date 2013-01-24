@@ -3,7 +3,7 @@ module Nerve
     require 'net/http'
 
     class HttpServiceCheck
-      include Base
+      include Utils
       include Logging
       def initialize(opts={})
         %w{port uri}.each do |required|

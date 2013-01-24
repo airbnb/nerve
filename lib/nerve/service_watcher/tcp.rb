@@ -3,7 +3,7 @@ module Nerve
     require 'socket'
 
     class TcpServiceCheck
-      include Base
+      include Utils
       include Logging
       def initialize(opts={})
         raise ArgumentError unless opts['port']

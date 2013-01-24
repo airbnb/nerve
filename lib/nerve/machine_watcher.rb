@@ -2,7 +2,7 @@ require_relative './machine_watcher/cpuidle'
 
 module Nerve
   class MachineWatcher
-    include Base
+    include Utils
     include Logging
 
     def initialize(opts={})

@@ -3,7 +3,7 @@ require_relative './service_watcher/http'
 
 module Nerve
   class ServiceWatcher
-    include Base
+    include Utils
     include Logging
 
     def initialize(opts={})
