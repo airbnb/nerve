@@ -22,7 +22,7 @@ module Nerve
           Timeout::timeout(@timeout) do
             socket = TCPSocket.new(@host,@port)
             socket.close
-            return True
+            return true
           end
         end
 
