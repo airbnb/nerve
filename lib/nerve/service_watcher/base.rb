@@ -1,0 +1,51 @@
+module Nerve
+  module ServiceCheck
+    class BaseServiceCheck
+      include Utils
+      include Logging
+
+      def initialize(opts={})
+        @timeout = opts['timeout'].to_i || 0.1
+        @rise    = opts['rise'].to_i    || 1
+        @fall    = opts['fall'].to_i    || 1
+
+        @check_buffer = RingBuffer.new([@rise, @fall].max)
+        @last_result = nil
+      end
+
+      def up?
+        # do the check
+        check_result = ignore_errors do
+          Timeout::timeout(@timeout) do
+            check
+          end
+        end
+
+        # this is the first check -- initialize buffer
+        if @last_result == nil
+          @last_result = check_result
+          @check_buffer.size.times {@check_buffer.push check_result}
+          log.info "initial service check returned #{@check_result}"
+        end
+
+        @check_buffer.push(check_result)
+
+        # we've failed if the last @fall times are false
+        unless @check_buffer.last(@fall).reduce(:|)
+          @last_result = false
+          log.info "service check transitions to down after #{@fall} failures"
+        end
+
+        # we've succeeded if the last @rise times is true
+        if @check_buffer.last(@rise).reduce(:&)
+          @last_result = true
+          log.info "service check transitions to up after #{@rise} successes"
+        end
+
+        # otherwise return the last result
+        return @last_result
+      end
+    end
+  end
+end
+ 

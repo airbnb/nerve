@@ -13,8 +13,6 @@ module Nerve
         instance_variable_set("@#{required}", opts[required])
       end
 
-      # optional parameters control how checks are made
-      @threshold = opts['failure_threshold'] || 2
       @check_interval = opts['check_interval'] || 0.5
 
       # instantiate the checks for this watcher
@@ -42,18 +40,7 @@ module Nerve
                            'key' => @instance_id,
                            'data' => {'host' => @host, 'port' => @port},
                          })
-      log.debug "created Zk handle for service #{@name}"
-
-      # run the initial check
-      log.info "running initial check for service #{@name}"
-      ring_buffer = RingBuffer.new(@threshold)
-      if check?
-        @threshold.times { ring_buffer.push true }
-        log.info "initial check succeeded, bring up service #{@name}"
-      else
-        @threshold.times { ring_buffer.push false }
-        log.info "initial check failed, bringing down service #{@name}"
-      end
+      log.debug "created zk handle for service #{@name}"
 
       # the main loop
       was_up = false
@@ -65,7 +52,7 @@ module Nerve
           @reporter.ping?
 
           # what is the status of the service?
-          is_up = ring_buffer.include?(false) ? false : true
+          is_up = check?
           log.debug "current service status for #{@name} is #{is_up.inspect}"
           if is_up != was_up
             if is_up
@@ -80,7 +67,6 @@ module Nerve
 
           # wait to run more checks
           sleep @check_interval
-          ring_buffer.push check?
         rescue Object => o
           log.error "hit an error, setting exit: "
           log.error o.inspect
@@ -93,8 +79,7 @@ module Nerve
 
     def check?
       @service_checks.each do |check|
-        check_status = check.check?
-        return false unless check_status
+        return false unless check.up?
       end
       return true
     end

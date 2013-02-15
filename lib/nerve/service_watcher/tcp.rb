@@ -1,33 +1,32 @@
+require_relative './base'
+
 module Nerve
   module ServiceCheck
     require 'socket'
 
-    class TcpServiceCheck
-      include Utils
-      include Logging
+    class TcpServiceCheck < BaseServiceCheck
       def initialize(opts={})
+        super
+
         raise ArgumentError unless opts['port']
 
         @port = opts['port']
-        @host = opts['host'] || '0.0.0.0'
-        @timeout = opts['timeout'] || 0.1
+        @host = opts['host'] || '127.0.0.1'
+        @name = "tcp-#{@host}:#{@port}"
       end
 
-      def check?
-        name = "#{@host}:#{@port}"
-        log.debug "making tcp connection to #{name}"
+      def check
+        log.debug "running health check #{@name}"
 
-        # catch all errors
-        return_status = ignore_errors do
-          Timeout::timeout(@timeout) do
-            socket = TCPSocket.new(@host,@port)
-            socket.close
-            return true
-          end
+        begin
+          socket = TCPSocket.new(@host,@port)
+        rescue
+          return false
+        ensure
+          socket.close
         end
 
-        log.debug "tcp check #{name} returned #{return_status}"
-        return return_status
+        return true
       end
     end
 

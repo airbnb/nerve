@@ -1,39 +1,32 @@
+require_relative './base'
+
 module Nerve
   module ServiceCheck
     require 'net/http'
 
-    class HttpServiceCheck
-      include Utils
-      include Logging
+    class HttpServiceCheck < BaseServiceCheck
       def initialize(opts={})
+        super
+
         %w{port uri}.each do |required|
           raise ArgumentError, "you need to specify required argument #{required}" unless
             opts[required]
           instance_variable_set("@#{required}",opts[required])
         end
 
-        @host = opts['host'] || '0.0.0.0'
-        @timeout = opts['timeout'] || 0.1
+        @host = opts['host'] || '127.0.0.1'
+        @name = "http-#{@host}:#{@port}#{@uri}"
       end
 
-      def check?
-        name = "#{@host}:#{@port}#{@uri}"
-        log.debug "running health check #{name}"
+      def check
+        log.debug "running health check #{@name}"
 
-        # ignore all errors
-        return_status = ignore_errors do
-          Timeout::timeout(@timeout) do
-            connection = Net::HTTP.start(@host,@port)
-            response = connection.get(@uri)
+        connection = Net::HTTP.start(@host,@port)
+        response = connection.get(@uri)
 
-            log.debug "check #{name} got response code #{response.code}"
-            return true if response.code.to_i >= 200 && response.code.to_i < 300
-            return false
-          end
-        end
-
-        log.debug "check #{name} returned #{return_status}"
-        return return_status
+        log.debug "check #{@name} got response code #{response.code}"
+        return true if response.code.to_i >= 200 && response.code.to_i < 300
+        return false
       end
     end
 
