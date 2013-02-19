@@ -7,12 +7,11 @@ module Nerve
 
     def ignore_errors(&block)
       begin
-        yield
+        return yield
       rescue Object => error
         log.debug "ignoring error #{error.inspect}"
         return false
       end
-      return true
     end
 
     def retry_this(retry_times=3, &block)
