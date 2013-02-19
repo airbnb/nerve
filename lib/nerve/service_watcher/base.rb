@@ -28,6 +28,7 @@ module Nerve
           log.info "initial service check returned #{@check_result}"
         end
 
+        log.debug "service check returned #{check_result}"
         @check_buffer.push(check_result)
 
         # we've failed if the last @fall times are false
