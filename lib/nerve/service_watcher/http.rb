@@ -25,7 +25,7 @@ module Nerve
         response = connection.get(@uri)
 
         log.debug "check #{@name} got response code #{response.code}"
-        return true if response.code.to_i >= 200 && response.code.to_i < 300
+        return true if (response.code.to_i >= 200 && response.code.to_i < 300)
         return false
       end
     end
