@@ -6,8 +6,8 @@ module Nerve
 
       def initialize(opts={})
         @timeout = opts['timeout'] ? opts['timeout'].to_i : 0.1
-        @rise    = opts['rise'] ? opts['rise'].to_i : 1
-        @fall    = opts['fall'] ? opts['fall'].to_i : 1
+        @rise    = opts['rise']    ? opts['rise'].to_i    : 1
+        @fall    = opts['fall']    ? opts['fall'].to_i    : 1
 
         @check_buffer = RingBuffer.new([@rise, @fall].max)
         @last_result = nil
