@@ -33,14 +33,14 @@ module Nerve
 
         # we've failed if the last @fall times are false
         unless @check_buffer.last(@fall).reduce(:|)
+          log.info "service check transitions to down after #{@fall} failures" if @last_result
           @last_result = false
-          log.info "service check transitions to down after #{@fall} failures"
         end
 
         # we've succeeded if the last @rise times is true
         if @check_buffer.last(@rise).reduce(:&)
+          log.info "service check transitions to up after #{@rise} successes" unless @last_result
           @last_result = true
-          log.info "service check transitions to up after #{@rise} successes"
         end
 
         # otherwise return the last result
