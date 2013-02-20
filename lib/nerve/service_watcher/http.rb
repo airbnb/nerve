@@ -23,7 +23,11 @@ module Nerve
         log.debug "running health check #{@name}"
 
         connection = Net::HTTP.new(@host,@port)
-        connection.use_ssl = @ssl
+        if @ssl
+          connection.use_ssl = true
+          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        end
+
         response = connection.get(@uri)
 
         log.debug "check #{@name} got response code #{response.code}"
