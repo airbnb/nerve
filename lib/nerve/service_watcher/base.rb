@@ -25,7 +25,7 @@ module Nerve
         if @last_result == nil
           @last_result = check_result
           @check_buffer.size.times {@check_buffer.push check_result}
-          log.info "initial service check returned #{@check_result}"
+          log.info "initial service check returned #{check_result}"
         end
 
         log.debug "service check returned #{check_result}"
