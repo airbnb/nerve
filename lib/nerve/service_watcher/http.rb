@@ -16,12 +16,14 @@ module Nerve
 
         @host = opts['host'] || '127.0.0.1'
         @name = "http-#{@host}:#{@port}#{@uri}"
+        @ssl = (opts.include?('ssl')) ? opts['ssl'] : false
       end
 
       def check
         log.debug "running health check #{@name}"
 
-        connection = Net::HTTP.start(@host,@port)
+        connection = Net::HTTP.new(@host,@port)
+        connection.use_ssl = @ssl
         response = connection.get(@uri)
 
         log.debug "check #{@name} got response code #{response.code}"
