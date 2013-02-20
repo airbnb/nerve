@@ -17,15 +17,18 @@ module Nerve
 
       # instantiate the checks for this watcher
       @service_checks = []
-      opts['checks'] ||= {}
-      opts['checks'].each do |type,params|
+      opts['checks'] ||= []
+      opts['checks'].each do |check|
+        check['type'] ||= "undefined"
         begin
-          service_check_class = ServiceCheck::CHECKS[type]
+          service_check_class = ServiceCheck::CHECKS[check['type']]
         rescue
-          raise ArgumentError, "invalid service check type #{type}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
+          raise ArgumentError, "invalid service check type #{check['type']}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
         end
 
-        @service_checks << service_check_class.new(params.merge({'port' => @port, 'host' => @host}))
+        check['host'] ||= @host
+        check['port'] ||= @port
+        @service_checks << service_check_class.new(check)
       end
 
       log.debug "created service watcher for #{@name} with #{@service_checks.size} checks"
