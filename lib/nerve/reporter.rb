@@ -4,7 +4,7 @@ module Nerve
     include Logging
 
     def initialize(opts)
-      %w{path key}.each do |required|
+      %w{path key ephemeral}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts[required])
         log.debug "set @#{required} to #{opts[required]}"
@@ -47,7 +47,7 @@ module Nerve
       begin
         @zk.set(@key,@data)
       rescue ZK::Exceptions::NoNode => e
-        @zk.create(@key,:data => @data, :mode => :ephemeral)
+        @zk.create(@key,:data => @data, :ephemeral => @ephemeral)
       end
     end
 

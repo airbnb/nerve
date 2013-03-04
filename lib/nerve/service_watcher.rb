@@ -42,6 +42,7 @@ module Nerve
                            'path' => @zk_path,
                            'key' => @instance_id,
                            'data' => {'host' => @host, 'port' => @port},
+                           'ephemeral' => true,
                          })
       log.debug "created zk handle for service #{@name}"
 

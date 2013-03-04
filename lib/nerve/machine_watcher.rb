@@ -31,6 +31,7 @@ module Nerve
                            'path' => @zk_path,
                            'key' => @instance_id,
                            'data' => {'vote'=>0},
+                           'ephemeral' => false,
                          })
       @reporter.report_up
       previous_vote = 0
