@@ -5,7 +5,7 @@ module Nerve
 
     def initialize(opts)
       %w{path key ephemeral}.each do |required|
-        raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
+        raise ArgumentError, "you need to specify required argument #{required}" unless opts.include?(required)
         instance_variable_set("@#{required}",opts[required])
         log.debug "set @#{required} to #{opts[required]}"
       end
