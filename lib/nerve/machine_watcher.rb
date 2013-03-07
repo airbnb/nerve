@@ -23,6 +23,12 @@ module Nerve
       end
 
       @machine_check = machine_check_class.new(opts)
+      @machine_check_touch_time = 60
+      @machine_data = opts['machine_data'] ? opts['machine_data'] : {}
+    end
+
+    def data(vote)
+      return @machine_data.merge({'vote' => vote})
     end
 
     def run
@@ -30,13 +36,14 @@ module Nerve
       @reporter = Reporter.new({
                            'path' => @zk_path,
                            'key' => @instance_id,
-                           'data' => {'vote'=>0},
+                           'data' => data(0),
                            'ephemeral' => false,
                          })
       @reporter.report_up
       previous_vote = 0
       log.info "starting machine watch. vote is 0"
 
+      counter = 0
       until $EXIT
         begin
           @reporter.ping?
@@ -44,10 +51,19 @@ module Nerve
           vote = @machine_check.vote
           log.debug "current vote is #{vote}"
           if vote != previous_vote
-            @reporter.update_data({'vote'=>vote})
+            @reporter.update_data(data(vote))
             previous_vote = vote
             log.info "vote changed to #{vote}"
+            counter = 0
           end
+
+          # touch the machine check file if we have not done so in @machine_check_touch_time
+          if counter > @machine_check_touch_time
+            log.debug "touching machine check file"
+            @reporter.update_data(data(vote))
+            counter = 0
+          end
+          counter += 1
           sleep 1
         rescue Object => o
           log.error "hit an error, setting exit: "
