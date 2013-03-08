@@ -2,8 +2,6 @@ require 'logger'
 require 'json'
 require 'timeout'
 
-require 'zk'
-
 require_relative './nerve/version'
 require_relative './nerve/utils'
 require_relative './nerve/log'

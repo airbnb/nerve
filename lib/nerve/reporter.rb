@@ -1,3 +1,5 @@
+require 'zk'
+
 module Nerve
   class Reporter
     include Utils
