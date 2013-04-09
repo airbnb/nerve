@@ -13,6 +13,7 @@ module Nerve
         instance_variable_set("@#{required}", opts[required])
       end
 
+      @zk_key = "#{@instance_id}_#{@name}"
       @check_interval = opts['check_interval'] || 0.5
 
       # instantiate the checks for this watcher
@@ -40,7 +41,7 @@ module Nerve
       # create zookeeper connection
       @reporter = Reporter.new({
                            'path' => @zk_path,
-                           'key' => @instance_id,
+                           'key' => @zk_key,
                            'data' => {'host' => @host, 'port' => @port},
                          })
       log.debug "created zk handle for service #{@name}"
