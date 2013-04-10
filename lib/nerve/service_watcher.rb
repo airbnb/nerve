@@ -29,6 +29,7 @@ module Nerve
 
         check['host'] ||= @host
         check['port'] ||= @port
+        check['name'] ||= "#{@name}_#{check['type']}_#{check['port']}"
         @service_checks << service_check_class.new(check)
       end
 
