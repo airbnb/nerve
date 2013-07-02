@@ -7,7 +7,7 @@ module Nerve
     include Logging
 
     def initialize(opts={})
-      log.debug "creating service watcher object"
+      log.debug "nerve: creating service watcher object"
 
       %w{port host zk_path instance_id name}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless opts[required]
@@ -35,11 +35,11 @@ module Nerve
         @service_checks << service_check_class.new(check)
       end
 
-      log.debug "created service watcher for #{@name} with #{@service_checks.size} checks"
+      log.debug "nerve: created service watcher for #{@name} with #{@service_checks.size} checks"
     end
 
     def run()
-      log.info "Starting to watch service #{@name}"
+      log.info "nerve: starting service watch #{@name}"
 
       # create zookeeper connection
       @reporter = Reporter.new({
@@ -48,39 +48,34 @@ module Nerve
           'data' => {'host' => @host, 'port' => @port},
         })
 
-      # the main loop
       was_up = false
-      log.debug "about to start main loop"
       until $EXIT
-        begin
-          log.debug "loop service watcher #{@name}"
+        @reporter.ping?
 
-          @reporter.ping?
+        # what is the status of the service?
+        is_up = check?
+        log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
 
-          # what is the status of the service?
-          is_up = check?
-          log.debug "current service status for #{@name} is #{is_up.inspect}"
-          if is_up != was_up
-            if is_up
-              @reporter.report_up
-              log.info "service #{@name} is now up"
-            else
-              @reporter.report_down
-              log.warn "service #{@name} is now down"
-            end
-            was_up = is_up
+        if is_up != was_up
+          if is_up
+            @reporter.report_up
+            log.info "nerve: service #{@name} is now up"
+          else
+            @reporter.report_down
+            log.warn "nerve: service #{@name} is now down"
           end
-
-          # wait to run more checks
-          sleep @check_interval
-        rescue Object => o
-          log.error "hit an error, setting exit: "
-          log.error o.inspect
-          log.error o.backtrace
-          $EXIT = true
+          was_up = is_up
         end
+
+        # wait to run more checks
+        sleep @check_interval
       end
-      log.debug "exited loop"
+    rescue StandardError => e
+      log.error "nerve: error in service watcher #{@name}: #{e}"
+      raise e
+    ensure
+      log.info "nerve: ending service watch #{@name}"
+      $EXIT = true
     end
 
     def check?
@@ -89,6 +84,5 @@ module Nerve
       end
       return true
     end
-
   end
 end

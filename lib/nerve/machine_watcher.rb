@@ -6,13 +6,12 @@ module Nerve
     include Logging
 
     def initialize(opts={})
-      log.debug 'creating machine watcher'
+      log.debug 'nerve: creating machine watcher'
 
       # required inputs
       %w{metric zk_path instance_id}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts[required])
-        log.debug "set @#{required} to #{opts[required]}"
       end
 
       begin
@@ -26,36 +25,38 @@ module Nerve
     end
 
     def run
-      log.info 'watching machine'
+      log.info 'nerve: starting machine watch'
+
       @reporter = Reporter.new({
           'path' => @zk_path,
           'key' => @instance_id,
           'data' => {'vote'=>0},
         })
       @reporter.report_up
+
       previous_vote = 0
-      log.info "starting machine watch. vote is 0"
 
       until $EXIT
-        begin
-          @reporter.ping?
-          @machine_check.poll
-          vote = @machine_check.vote
-          log.debug "current vote is #{vote}"
-          if vote != previous_vote
-            @reporter.update_data({'vote'=>vote})
-            previous_vote = vote
-            log.info "vote changed to #{vote}"
-          end
-          sleep 1
-        rescue Object => o
-          log.error "hit an error, setting exit: "
-          log.error o.inspect
-          log.error o.backtrace
-          $EXIT = true
+        @reporter.ping?
+
+        @machine_check.poll
+        vote = @machine_check.vote
+        log.debug "nerve: current vote is #{vote}"
+
+        if vote != previous_vote
+          @reporter.update_data({'vote'=>vote})
+          previous_vote = vote
+          log.info "nerve: vote changed to #{vote}"
         end
+
+        sleep 1
       end
-      log.info "ending machine watch"
+    rescue StandardError => e
+      log.error "nerve: error in machine watcher: #{e}"
+      raise e
+    ensure
+      log.info 'nerve: ending machine watch'
+      $EXIT = true
     end
   end
 end
