@@ -17,7 +17,6 @@ module Nerve
     include Logging
 
     def initialize(opts={})
-
       # set global variable for exit signal
       $EXIT = false
 

@@ -28,10 +28,10 @@ module Nerve
     def run
       log.info 'watching machine'
       @reporter = Reporter.new({
-                           'path' => @zk_path,
-                           'key' => @instance_id,
-                           'data' => {'vote'=>0},
-                         })
+          'path' => @zk_path,
+          'key' => @instance_id,
+          'data' => {'vote'=>0},
+        })
       @reporter.report_up
       previous_vote = 0
       log.info "starting machine watch. vote is 0"

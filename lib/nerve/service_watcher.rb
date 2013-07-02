@@ -8,6 +8,7 @@ module Nerve
 
     def initialize(opts={})
       log.debug "creating service watcher object"
+
       %w{port host zk_path instance_id name}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless opts[required]
         instance_variable_set("@#{required}", opts[required])
@@ -24,7 +25,8 @@ module Nerve
         begin
           service_check_class = ServiceCheck::CHECKS[check['type']]
         rescue
-          raise ArgumentError, "invalid service check type #{check['type']}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
+          raise ArgumentError,
+            "invalid service check type #{check['type']}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
         end
 
         check['host'] ||= @host
@@ -41,11 +43,10 @@ module Nerve
 
       # create zookeeper connection
       @reporter = Reporter.new({
-                           'path' => @zk_path,
-                           'key' => @zk_key,
-                           'data' => {'host' => @host, 'port' => @port},
-                         })
-      log.debug "created zk handle for service #{@name}"
+          'path' => @zk_path,
+          'key' => @zk_key,
+          'data' => {'host' => @host, 'port' => @port},
+        })
 
       # the main loop
       was_up = false
