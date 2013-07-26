@@ -14,7 +14,7 @@ Welcome to nerve
 
 Usage: nerve --config /path/to/nerve/config
 EOB
-  
+
   options[:config] = ENV['NERVE_CONFIG']
   opts.on('-c config','--config config', String, 'path to nerve config') do |key,value|
     options[:config] = key
@@ -35,12 +35,14 @@ optparse.parse!
 # parse nerve config file
 begin
   config = JSON::parse(File.read(options[:config]))
+rescue TypeError => e
+  raise ArgumentError, "you must pass in a '--config' option"
 rescue Errno::ENOENT => e
   raise ArgumentError, "config file does not exist:\n#{e.inspect}"
 rescue Errno::EACCES => e
   raise ArgumentError, "could not open config file:\n#{e.inspect}"
 rescue JSON::ParserError => e
-  raise "config file #{options[:config]} is not json:\n#{e.inspect}" 
+  raise "config file #{options[:config]} is not json:\n#{e.inspect}"
 end
 
 

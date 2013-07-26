@@ -9,14 +9,14 @@ module Nerve
       %w{path key}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts[required])
-        log.debug "set @#{required} to #{opts[required]}"
       end
       @data = parse_data(opts['data'] ? opts['data'] : '')
       @key.insert(0,'/') unless @key[0] == '/'
 
-      log.info "waiting to connect to zookeeper at #{@path}"
+      log.info "nerve: waiting to connect to zookeeper at #{@path}"
       @zk = ZK.new(@path)
-      log.info "created zk connection to #{@path}"
+
+      log.info "nerve: successfully created zk connection to #{@path}"
     end
 
     #TODO(is): need to check ownership of znodes to resolve name conflicts
@@ -44,8 +44,7 @@ module Nerve
     end
 
     def zk_save
-      log.debug "writing to zk at #{@key} with #{@data.inspect}"
-      log.debug "@data.class is #{@data.class}"
+      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect}"
       begin
         @zk.set(@key,@data)
       rescue ZK::Exceptions::NoNode => e
