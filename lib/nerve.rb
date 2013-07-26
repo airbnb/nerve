@@ -17,7 +17,6 @@ module Nerve
     include Logging
 
     def initialize(opts={})
-
       # set global variable for exit signal
       $EXIT = false
 
@@ -28,10 +27,10 @@ module Nerve
         end
       end
 
-      log.info "starting nerve"
+      log.info 'nerve: starting up!'
 
       # required options
-      log.debug "checking for required inputs"
+      log.debug 'nerve: checking for required inputs'
       %w{instance_id service_checks machine_check}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts[required])
@@ -39,7 +38,7 @@ module Nerve
 
 
       # create service watcher objects
-      log.debug "creating service watchers"
+      log.debug 'nerve: creating service watchers'
       opts['service_checks'] ||= {}
       @service_watchers=[]
       opts['service_checks'].each do |name,params|
@@ -47,32 +46,32 @@ module Nerve
       end
 
       # create machine watcher object
-      log.debug "creating machine watcher"
+      log.debug 'nerve: creating machine watcher'
       @machine_check = MachineWatcher.new(opts['machine_check'].merge({'instance_id' => @instance_id}))
 
-      log.debug 'completed init for nerve'
+      log.debug 'nerve: completed init'
     end
 
     def run
-      log.info "starting run"
+      log.info 'nerve: starting run'
       begin
         children = []
-        log.debug "launching machine check thread"
+        log.debug 'nerve: launching machine check thread'
         children << Thread.new{@machine_check.run}
 
-        log.debug "launching service check threads"
+        log.debug 'nerve: launching service check threads'
         @service_watchers.each do |watcher|
           children << Thread.new{watcher.run}
         end
 
-        log.info "waiting for children"
+        log.debug 'nerve: main thread done, waiting for children'
         children.each do |child|
           child.join
         end
       ensure
         $EXIT = true
       end
-      log.info "ending run"
+      log.info 'nerve: exiting'
     end
 
   end

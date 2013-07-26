@@ -14,19 +14,34 @@
     "zk_path": "localhost:2181/nerve/services/awesome_service/machines"
   },
   "service_checks": {
-    "your_service": {
+    "your_http_service": {
       "port": 3000,
       "host": "127.0.0.1",
-      "zk_path": "localhost:2181/nerve/services/awesome_service/services",
-      "check_interval": 3,
-      "checks": {
-        "http": {
+      "zk_path": "localhost:2181/nerve/services/your_http_service/services",
+      "check_interval": 2,
+      "checks": [
+        {
+          "type": "http",
           "uri": "/health",
           "timeout": 0.2,
           "rise": 3,
           "fall": 2
         }
-      }
+      ]
+    },
+    "your_tcp_service": {
+      "port": 6379,
+      "host": "127.0.0.1",
+      "zk_path": "localhost:2181/nerve/services/your_tcp_service/services",
+      "check_interval": 2,
+      "checks": [
+        {
+          "type": "tcp",
+          "timeout": 0.2,
+          "rise": 3,
+          "fall": 2
+        }
+      ]
     }
   }
 }

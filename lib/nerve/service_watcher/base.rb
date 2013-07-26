@@ -5,7 +5,7 @@ module Nerve
       include Logging
 
       def initialize(opts={})
-        @timeout = opts['timeout'] ? opts['timeout'].to_i : 0.1
+        @timeout = opts['timeout'] ? opts['timeout'].to_f : 0.1
         @rise    = opts['rise']    ? opts['rise'].to_i    : 1
         @fall    = opts['fall']    ? opts['fall'].to_i    : 1
         @name    = opts['name']    ? opts['name']         : "undefined"
@@ -17,30 +17,28 @@ module Nerve
       def up?
         # do the check
         check_result = ignore_errors do
-          Timeout::timeout(@timeout) do
-            check
-          end
+          check
         end
 
         # this is the first check -- initialize buffer
         if @last_result == nil
           @last_result = check_result
           @check_buffer.size.times {@check_buffer.push check_result}
-          log.info "service check #{@name}: initial check returned #{check_result}"
+          log.info "nerve: service check #{@name} initial check returned #{check_result}"
         end
 
-        log.debug "service check #{@name}: returned #{check_result}"
+        log.debug "nerve: service check #{@name} returned #{check_result}"
         @check_buffer.push(check_result)
 
         # we've failed if the last @fall times are false
         unless @check_buffer.last(@fall).reduce(:|)
-          log.info "service check #{@name}: transitions to down after #{@fall} failures" if @last_result
+          log.info "nerve: service check #{@name} transitions to down after #{@fall} failures" if @last_result
           @last_result = false
         end
 
         # we've succeeded if the last @rise times is true
         if @check_buffer.last(@rise).reduce(:&)
-          log.info "service check #{@name}: transitions to up after #{@rise} successes" unless @last_result
+          log.info "nerve: service check #{@name} transitions to up after #{@rise} successes" unless @last_result
           @last_result = true
         end
 
@@ -50,4 +48,4 @@ module Nerve
     end
   end
 end
- 
+
