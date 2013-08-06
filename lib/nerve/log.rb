@@ -14,7 +14,7 @@ module Nerve
       end
 
       def configure_logger_for(classname)
-        logger = Logger.new(STDOUT)
+        logger = Logger.new(STDERR)
         logger.level = Logger::INFO unless ENV['DEBUG']
         logger.progname = classname
         return logger
