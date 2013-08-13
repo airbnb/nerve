@@ -21,33 +21,36 @@ module Nerve
         @read_timeout = opts['read_timeout'] || @timeout
         @open_timeout = opts['open_timeout'] || 0.2
         @ssl_timeout  = opts['ssl_timeout']  || 0.2
-
-        @args = {:read_timeout => @read_timeout, :open_timeout => @open_timeout, :ssl_timeout => @timeout}
       end
 
       def check
         log.debug "running health check #{@name}"
 
         connection = get_connection
-        begin
-          response = connection.get(@uri)
+        response = connection.get(@uri)
+        code = response.code.to_i
 
-          log.debug "nerve: check #{@name} got response code #{response.code}"
-          return true if (response.code.to_i >= 200 && response.code.to_i < 300)
+        log.debug "nerve: check #{@name} got response code #{code}"
+        if code >= 200 and code < 300
+          return true
+        else
           return false
-        ensure
-          connection.finish
         end
       end
 
       private
       def get_connection
-        c = Net::HTTP.start(@host, @port, @args)
+        con = Net::HTTP.new(@host, @port)
+        con.read_timeout = @read_timeout
+        con.open_timeout = @open_timeout
+
         if @ssl
-          connection.use_ssl = true
-          connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          con.use_ssl = true
+          con.ssl_timeout = @ssl_timeout
+          con.verify_mode = OpenSSL::SSL::VERIFY_NONE
         end
-        c
+
+        return con
       end
 
     end
