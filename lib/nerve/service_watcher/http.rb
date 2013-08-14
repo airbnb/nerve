@@ -14,13 +14,14 @@ module Nerve
           instance_variable_set("@#{required}",opts[required])
         end
 
-        @name        = "http-#{@host}:#{@port}#{@uri}"
         @host        = opts['host'] || '127.0.0.1'
         @ssl         = opts['ssl']  || false
 
         @read_timeout = opts['read_timeout'] || @timeout
         @open_timeout = opts['open_timeout'] || 0.2
         @ssl_timeout  = opts['ssl_timeout']  || 0.2
+
+        @name        = "http-#{@host}:#{@port}#{@uri}"
       end
 
       def check
