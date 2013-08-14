@@ -9,7 +9,7 @@ module Nerve
       def initialize(opts={})
         super
 
-        raise ArgumentError, "missing required argument port in tcp check" unless opts['port']
+        raise ArgumentError, "missing required argument 'port' in tcp check" unless opts['port']
 
         @port = opts['port']
         @host = opts['host'] || '127.0.0.1'
