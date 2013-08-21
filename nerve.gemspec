@@ -4,13 +4,13 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'nerve/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = "nerve"
+  gem.name          = 'nerve'
   gem.version       = Nerve::VERSION
   gem.authors       = ["Martin Rhoads", "Igor Serebryany", "Pierre Carrier"]
   gem.email         = ["martin.rhoads@airbnb.com", "igor.serebryany@airbnb.com"]
   gem.description   = %q{description}
   gem.summary       = %q{summary}
-  gem.homepage      = ""
+  gem.homepage      = ''
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
