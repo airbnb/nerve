@@ -17,3 +17,13 @@ describe Nerve::Test::Process do
   end
 
 end
+
+describe Nerve::Test::NerveProcess do
+
+  let(:process) { Nerve::Test::NerveProcess.new }
+
+  it "should start nerve" do
+    process.start
+  end
+
+end
