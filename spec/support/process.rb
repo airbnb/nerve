@@ -15,6 +15,7 @@ module Nerve
 
       attr_reader :stdout
       attr_reader :stderr
+      attr_reader :status
 
       class << self
         attr_accessor :log_by_default
@@ -49,7 +50,7 @@ module Nerve
 
         log_print "Starting #{name}..."
         launch_process
-        # start_consumer
+        start_consumer
         self.class.started << self
         log_puts " started! (pid=#{pid})"
       rescue => e
@@ -77,21 +78,19 @@ module Nerve
         @pid = nil
 
         log_puts " stopped."
-        @wait_thr.value
+        @status
       end
 
       def wait(timeout=10)
         _pid = nil
         deadline = Time.now + timeout
-        while deadline > Time.now
-          _pid, status = ::Process.wait2(pid, ::Process::WNOHANG)
-          break if _pid
-        end
+        sleep 0.1 while deadline > Time.now && @wait_thr.alive?
         !!_pid
       rescue Errno::ECHILD
         true
       ensure
-        # stop_consumer
+        stop_consumer
+        @status = @wait_thr.value
       end
 
       def clear_buffers
@@ -121,44 +120,29 @@ module Nerve
         ::Process.kill(signal, pid)
       end
 
-      # def start_consumer
-      #   @consuming = true
-      #   @consumer_thr = Thread.new { consume_pipes }
-      # end
+      def start_consumer
+        @consumer_thr = Thread.new { consume_pipes(@wait_thr) }
+      end
 
-      # def stop_consumer
-      #   @consuming = false
-      #   @consumer_thr.join
-      #   @consumer_thr.kill
-      # end
+      def stop_consumer
+        @consumer_thr.join
+      end
 
-      # def consume_pipes
-      #   read_atleast_once = false
-      #   pipe_map = {
-      #     @stdout_p => @stdout,
-      #     @stderr_p => @stderr
-      #   }
+      def consume_pipes(wait_thread)
+        pipe_map = {
+          @stdout_p => @stdout,
+          @stderr_p => @stderr
+        }
 
-      #   while !read_atleast_once || @consuming
-      #     loop do
-      #       rs, _, _ = IO.select([@stdout_p, @stderr_p], [], [], 0.1)
+        while wait_thread.alive?
+          rs, _, _ = IO.select([@stdout_p, @stderr_p], [], [], 0.1)
+          rs.each { |p| pipe_map[p] << p.read }
+        end
 
-      #       did_read = false
-      #       rs.each do |p|
-      #         string = p.read
-      #         did_read = true if string && string.length > 0
-      #         pipe_map[p] << string
-      #       end
-
-      #       read_atleast_once |= did_read
-      #       break unless did_read
-      #     end
-      #   end
-
-      # rescue => e
-      #   puts "ERROR: exception in consumer: " \
-      #     "#{e} #{e.backtrace.join("\n")}"
-      # end
+      rescue => e
+        puts "ERROR: exception in consumer: " \
+          "#{e} #{e.backtrace.join("\n")}"
+      end
 
       def log_print(string)
         print string if log
