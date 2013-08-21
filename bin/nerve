@@ -3,7 +3,7 @@
 require 'json'
 require 'optparse'
 
-require_relative "../lib/nerve"
+require 'nerve'
 
 options={}
 

@@ -1,5 +1,5 @@
-require_relative './service_watcher/tcp'
-require_relative './service_watcher/http'
+require 'nerve/service_watcher/tcp'
+require 'nerve/service_watcher/http'
 
 module Nerve
   class ServiceWatcher

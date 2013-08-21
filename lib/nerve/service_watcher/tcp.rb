@@ -1,4 +1,4 @@
-require_relative './base'
+require 'nerve/service_watcher/base'
 
 module Nerve
   module ServiceCheck

@@ -1,4 +1,4 @@
-require_relative './machine_watcher/cpuidle'
+require 'nerve/machine_watcher/cpuidle'
 
 module Nerve
   class MachineWatcher
