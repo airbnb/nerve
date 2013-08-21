@@ -22,12 +22,12 @@ module Nerve
       end
       @log_by_default = false
 
-      def self.started
-        @started ||= []
+      def self.started_processes
+        @started_processes ||= []
       end
 
       def self.stop_all
-        started.dup.each { |p| p.stop }
+        started_processes.dup.each { |p| p.stop }
       end
 
       def initialize(command, options={})
@@ -51,7 +51,7 @@ module Nerve
         log_print "Starting #{name}..."
         launch_process
         start_consumer
-        self.class.started << self
+        self.class.started_processes << self
         log_puts " started! (pid=#{pid})"
       rescue => e
         log_puts " failed!"
@@ -74,7 +74,7 @@ module Nerve
 
         close_pipes
 
-        self.class.started.delete(self)
+        self.class.started_processes.delete(self)
         @pid = nil
 
         log_puts " stopped."
