@@ -1,3 +1,5 @@
+require 'fileutils'
+
 module Nerve
   module Test
 
@@ -33,6 +35,12 @@ module Nerve
         super
       end
 
+      def stop(options={})
+        retval = super
+        destroy_directories unless options[:preserve]
+        retval
+      end
+
       private
 
       def create_directories
@@ -55,6 +63,10 @@ module Nerve
         end
 
         # TODO(jtai): write myid?
+      end
+
+      def destroy_directories
+        FileUtils.rm_rf(prefix)
       end
 
     end
