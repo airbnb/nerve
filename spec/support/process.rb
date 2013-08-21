@@ -11,9 +11,15 @@ module Nerve
 
       attr_reader :pid
       attr_reader :name
+      attr_reader :log
 
       attr_reader :stdout
       attr_reader :stderr
+
+      class << self
+        attr_accessor :log_by_default
+      end
+      @log_by_default = false
 
       def self.started
         @started ||= []
@@ -30,6 +36,7 @@ module Nerve
         @environment = environment || {}
 
         @name = options[:name] || command
+        @log = options.fetch(:log, self.class.log_by_default)
 
         @stdout = ""
         @stderr = ""
@@ -40,13 +47,13 @@ module Nerve
         @started = true
         clear_buffers
 
-        print "Starting #{name}..."
+        log_print "Starting #{name}..."
         launch_process
         # start_consumer
         self.class.started << self
-        puts " started! (pid=#{pid})"
+        log_puts " started! (pid=#{pid})"
       rescue => e
-        puts " failed!"
+        log_puts " failed!"
         raise e
       end
 
@@ -55,10 +62,10 @@ module Nerve
         @started = false
 
         begin
-          print "Stopping #{name} (pid=#{pid})..."
+          log_print "Stopping #{name} (pid=#{pid})..."
           send_signal(options[:signal] || :TERM)
           unless wait(options[:timeout] || 10)
-            print " killing..."
+            log_print " killing..."
             send_signal(:KILL)
           end
         rescue Errno::ESRCH, Errno::ECHILD
@@ -69,7 +76,7 @@ module Nerve
         self.class.started.delete(self)
         @pid = nil
 
-        puts " stopped."
+        log_puts " stopped."
         @wait_thr.value
       end
 
@@ -152,6 +159,14 @@ module Nerve
       #   puts "ERROR: exception in consumer: " \
       #     "#{e} #{e.backtrace.join("\n")}"
       # end
+
+      def log_print(string)
+        print string if log
+      end
+
+      def log_puts(string)
+        puts string if log
+      end
 
     end
 
