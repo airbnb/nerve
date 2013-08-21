@@ -27,3 +27,13 @@ describe Nerve::Test::NerveProcess do
   end
 
 end
+
+describe Nerve::Test::ZooKeeperProcess do
+
+  let(:process) { Nerve::Test::ZooKeeperProcess.new }
+
+  it "should start zookeeper" do
+    process.start
+  end
+
+end

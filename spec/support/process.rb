@@ -33,7 +33,7 @@ module Nerve
         @command = command
         @arguments = options[:arguments] || []
         @working_directory = options[:working_directory] || '.'
-        @environment = environment || {}
+        @environment = options[:environment] || {}
 
         @name = options[:name] || command
         @log = options.fetch(:log, self.class.log_by_default)

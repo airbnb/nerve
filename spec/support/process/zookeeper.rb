@@ -3,27 +3,27 @@ require 'fileutils'
 module Nerve
   module Test
 
-    class ZooKeeper < Process
-      attr_reader :bindir
-      attr_reader :prefix
+    class ZooKeeperProcess < Process
       attr_reader :zoocfg
+      attr_reader :prefix
+      attr_reader :bindir
 
-      # bindir - String path to unpacked ZooKeeper installation
-      # prefix - String path to this ZooKeeper instance's config, data, and log files
       # zoocfg - Hash ZooKeeper options, written to zoo.cfg
-      def initialize(bindir, prefix, zoocfg)
-        @bindir = bindir
-        @prefix = prefix
-        @zoocfg = zoocfg
+      # prefix - String path to this ZooKeeper instance's config, data, and log files
+      # bindir - String path to unpacked ZooKeeper installation
+      def initialize(zoocfg = nil, prefix = nil, bindir = nil)
+        @zoocfg = zoocfg || { :tickTime => 2000, :clientPort => 2181 }
+        @prefix = prefix || ENV['ZOOKEEPER_PREFIX'] || '/tmp/zk'
+        @bindir = bindir || ENV['ZOOKEEPER_BINDIR'] || '/opt/zookeeper/bin'
 
-        command = File.join(bindir, 'bin', 'zkServer.sh')
+        command = File.join(@bindir, 'zkServer.sh')
         options = {
           :arguments => [
             'start-foreground'
           ],
           :environment => {
-            'ZOOCFGDIR' => File.join(prefix, 'conf'),
-            'ZOO_LOG_DIR' => File.join(prefix, 'log')
+            'ZOOCFGDIR' => File.join(@prefix, 'conf'),
+            'ZOO_LOG_DIR' => File.join(@prefix, 'log')
           }
         }
         super(command, options)
