@@ -2,12 +2,12 @@ require 'logger'
 require 'json'
 require 'timeout'
 
-require_relative './nerve/version'
-require_relative './nerve/utils'
-require_relative './nerve/log'
-require_relative './nerve/ring_buffer'
-require_relative './nerve/reporter'
-require_relative './nerve/service_watcher'
+require 'nerve/version'
+require 'nerve/utils'
+require 'nerve/log'
+require 'nerve/ring_buffer'
+require 'nerve/reporter'
+require 'nerve/service_watcher'
 
 module Nerve
   class Nerve
