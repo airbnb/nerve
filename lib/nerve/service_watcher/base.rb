@@ -16,7 +16,7 @@ module Nerve
 
       def up?
         # do the check
-        check_result = ignore_errors do
+        check_result = !!ignore_errors do
           check
         end
 
