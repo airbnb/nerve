@@ -145,7 +145,8 @@ module Nerve
     end
 
     def start_client
-      @zk = ZK.new("localhost:#{client_port}",
+      @zk = ZK.new(
+        client_socket,
         :timeout => 1,
         :connect => true)
     end
