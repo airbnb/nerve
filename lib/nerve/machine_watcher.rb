@@ -1,4 +1,5 @@
 require_relative './machine_watcher/cpuidle'
+require_relative './machine_watcher/trivial'
 
 module Nerve
   class MachineWatcher

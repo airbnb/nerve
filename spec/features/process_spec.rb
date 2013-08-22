@@ -1,10 +1,10 @@
 require 'spec_helper'
 
-describe Nerve::Test::Process do
+describe Nerve::Process do
 
   let(:command) { 'echo' }
   let(:options) { { :arguments => ['blah'] } }
-  let(:process) { Nerve::Test::Process.new(command, options) }
+  let(:process) { Nerve::Process.new(command, options) }
 
   describe '#start' do
 
@@ -53,24 +53,39 @@ describe Nerve::Test::Process do
 
   end
 
-end
+  describe '#environment' do
 
-describe Nerve::Test::NerveProcess do
+    let(:command) { 'env' }
+    let(:options) { { :environment => { 'TEST' => 'blah' } } }
 
-  let(:process) { Nerve::Test::NerveProcess.new }
+    it "should make it to the process" do
+      process.start
+      process.wait
+      process.stdout.lines.map(&:strip).to_a.should include 'TEST=blah'
+    end
 
-  it "should start nerve" do
-    process.start
   end
 
 end
 
-describe Nerve::Test::ZooKeeperProcess do
+describe Nerve::NerveProcess do
 
-  let(:process) { Nerve::Test::ZooKeeperProcess.new }
+  let(:process) { Nerve::NerveProcess.new }
+
+  it "should start nerve" do
+    process.start
+    until_timeout(30) { raise unless process.up? }
+  end
+
+end
+
+describe Nerve::ZooKeeperProcess do
+
+  let(:process) { Nerve::ZooKeeperProcess.new }
 
   it "should start zookeeper" do
     process.start
+    until_timeout(30) { raise unless process.up? }
   end
 
 end
