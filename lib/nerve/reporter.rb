@@ -11,5 +11,8 @@ module Nerve
       end
       reporter.new(service)
     end
+
+    def close!
+    end
   end
 end

@@ -70,6 +70,10 @@ class Nerve::Reporter
       return data if data.class == String
       return data.to_json
     end
+
+    def close!
+      @zk.close!
+    end
   end
 end
 
