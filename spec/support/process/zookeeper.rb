@@ -33,7 +33,13 @@ module Nerve
 
       @zoocfg = options[:zoocfg] || {}
 
-      command = File.join(@bindir, 'zkServer')
+      command = nil
+      %w{zkServer zkServer.sh}.each do |bin|
+        path = File.join(@bindir, bin)
+        command = path if File.exists?(path)
+      end
+      command ||= 'zkServer' # maybe it's in the path?
+
       options = {
         :arguments => [
           'start-foreground'
@@ -43,6 +49,7 @@ module Nerve
           'ZOO_LOG_DIR' => File.join(@prefix, 'log')
         }
       }
+
       super(command, options)
     end
 
