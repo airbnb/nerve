@@ -129,22 +129,18 @@ module Nerve
       end
 
       def consume_pipes(wait_thread)
-        open_pipes = [
-          @stdout_p,
-          @stderr_p
-        ]
         pipe_map = {
           @stdout_p => @stdout,
           @stderr_p => @stderr
         }
 
-        until open_pipes.empty?
+        until pipe_map.empty?
           rs, _, _ = IO.select([@stdout_p, @stderr_p], nil, nil, nil)
           rs.each do |p|
             begin
               pipe_map[p] << p.read_nonblock(1024)
             rescue EOFError
-              open_pipes.delete(p)
+              pipe_map.delete(p)
             end
           end
         end
