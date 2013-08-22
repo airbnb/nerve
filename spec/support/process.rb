@@ -23,7 +23,7 @@ module Nerve
       @log_by_default = false
 
       def self.started_processes
-        @started_processes ||= []
+        @@started_processes ||= []
       end
 
       def self.stop_all
