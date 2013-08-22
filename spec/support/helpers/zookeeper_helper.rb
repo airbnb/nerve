@@ -72,7 +72,7 @@ module ZooKeeperHelper
       attr_reader :processes
 
       def start(options={})
-        @size = options[:size] || 2
+        @size = options[:size] || 3
         @processes = (1..size).map do |index|
           Nerve::ZooKeeperProcess.new(
             :myid => index,
