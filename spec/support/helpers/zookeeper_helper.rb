@@ -73,8 +73,14 @@ module ZooKeeperHelper
 
       def start(options={})
         @size = options[:size] || 2
-        @processes = (0...size).map do |index|
-          Nerve::ZooKeeperProcess.new(:myid => index, :ensemble_size => size)
+        @processes = (1..size).map do |index|
+          Nerve::ZooKeeperProcess.new(
+            :myid => index,
+            :ensemble_size => size,
+            :zoocfg => {
+              :initLimit => 5,
+              :syncLimit => 2
+            })
         end
         @processes.each { |p| p.start }
         ZooKeeperHelper.processes = @processes
