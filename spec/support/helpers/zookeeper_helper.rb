@@ -42,8 +42,10 @@ module ZooKeeperHelper
     class Single
       attr_reader :process
 
-      def start
-        @process = Nerve::ZooKeeperProcess.new
+      def start(options={})
+        zoocfg = options[:zoocfg] || {}
+
+        @process = Nerve::ZooKeeperProcess.new(:zoocfg => zoocfg)
         @process.start
         ZooKeeperHelper.processes = [@process]
       end
