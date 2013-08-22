@@ -79,6 +79,11 @@ module Nerve
       @status
     end
 
+    def restart(options={})
+      stop(options)
+      start
+    end
+
     def running?
       @wait_thr.alive?
     end

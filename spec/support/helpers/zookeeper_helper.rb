@@ -54,6 +54,10 @@ module ZooKeeperHelper
         ZooKeeperHelper.processes.clear
       end
 
+      def restart_one(options={})
+        @process[1].restart(options)
+      end
+
       def wait_for_up(timeout=30)
         until_timeout(timeout, "Zookeeper never came up") do
           raise unless @process.up?
@@ -90,6 +94,10 @@ module ZooKeeperHelper
         @processes.each { |p| p.stop(options) }
         @processes = nil
         ZooKeeperHelper.processes.clear
+      end
+
+      def restart_one(options={})
+        @processes[1].restart(options={})
       end
 
       def wait_for_up(timeout=30)
