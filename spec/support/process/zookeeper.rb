@@ -3,7 +3,7 @@ require 'fileutils'
 module Nerve
   class ZooKeeperProcess < Process
     attr_reader :myid
-    attr_reader :cluster_size
+    attr_reader :ensemble_size
 
     attr_reader :bindir
     attr_reader :prefix
@@ -14,16 +14,16 @@ module Nerve
 
     # options - Hash of client options
     #
-    #    :myid         - Integer id of server in cluster, standalone mode if not specified
-    #    :cluster_size - Integer number of servers in the cluster
+    #    :myid          - Integer id of server in cluster, standalone mode if not specified
+    #    :ensemble_size - Integer number of servers in the cluster
     #
-    #    :bindir       - String path to bin directory in ZooKeeper installation
-    #    :prefix       - String path to this ZooKeeper instance's config, data, and log files
+    #    :bindir        - String path to bin directory in ZooKeeper installation
+    #    :prefix        - String path to this ZooKeeper instance's config, data, and log files
     #
-    #    :zoocfg       - Hash misc ZooKeeper options, written to zoo.cfg
+    #    :zoocfg        - Hash misc ZooKeeper options, written to zoo.cfg
     def initialize(options={})
-      @myid         = options[:myid] || 1
-      @cluster_size = options[:cluster_size] || 1
+      @myid          = options[:myid] || 1
+      @ensemble_size = options[:ensemble_size] || 1
 
       default_prefix = '/tmp/nerve-spec-zk'
       default_prefix += "-#{myid}" if myid
@@ -96,8 +96,8 @@ module Nerve
         :clientPort => calculate_client_port(myid || 1)
       }
 
-      if cluster_size
-        1.upto(cluster_size) do |id|
+      if ensemble_size
+        1.upto(ensemble_size) do |id|
           q_port  = calculate_quorum_port(id)
           le_port = calculate_leader_election_port(id)
           overrides["server.#{id}"] = "localhost:#{q_port}:#{le_port}"
