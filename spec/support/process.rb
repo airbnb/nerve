@@ -122,7 +122,9 @@ module Nerve
       end
 
       def start_consumer
-        @consumer_thr = Thread.new { consume_pipes(@wait_thr) }
+        @consumer_thr = Thread.new do
+          consume_pipes(@wait_thr)
+        end
       end
 
       def stop_consumer
@@ -134,7 +136,6 @@ module Nerve
           @stdout_p => @stdout,
           @stderr_p => @stderr
         }
-
         until pipe_map.empty?
           rs, _, _ = IO.select([@stdout_p, @stderr_p], nil, nil, nil)
           rs.each do |p|
@@ -145,7 +146,6 @@ module Nerve
             end
           end
         end
-
       rescue => e
         puts "ERROR: exception in consumer: " \
           "#{e} #{e.backtrace.join("\n")}"
