@@ -29,12 +29,14 @@ module Nerve
       end
 
       class ServiceCheck
+        attr_reader :name
         attr_reader :port
         attr_reader :check_interval
         attr_reader :checks
         attr_reader :host
 
         def initialize(options={})
+          @name           = options[:name]           || 'my_service'
           @port           = options[:port]           || 9000
           @check_interval = options[:check_interval] || 1
           @checks         = options[:checks]         || [default_check]
@@ -98,8 +100,8 @@ module Nerve
         config = {
           :instance_id => instance_id,
           :machine_check => machine_check.to_h.merge(:zk_path => full_zk_path),
-          :service_checks => service_checks.map { |s|
-            s.to_h.merge(:zk_path => full_zk_path('services'))
+          :service_checks => service_checks.each_with_object({}) { |s, map|
+            map[s.name] = s.to_h.merge(:zk_path => full_zk_path('services'))
           }
         }
         File.write(config_path, JSON.dump(config))

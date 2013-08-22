@@ -65,7 +65,7 @@ module Nerve
         begin
           log_print "Stopping #{name} (pid=#{pid})..."
           send_signal(options[:signal] || :TERM)
-          unless wait(options[:timeout] || 10)
+          unless wait(:timeout => options[:timeout] || 10)
             log_print " killing..."
             send_signal(:KILL)
           end
@@ -81,16 +81,17 @@ module Nerve
         @status
       end
 
-      def wait(timeout=10)
-        _pid = nil
+      def wait(options={})
+        timeout = options[:timeout] || 10
         deadline = Time.now + timeout
         sleep 0.1 while deadline > Time.now && @wait_thr.alive?
-        !!_pid
       rescue Errno::ECHILD
         true
       ensure
-        stop_consumer
-        @status = @wait_thr.value
+        unless @wait_thr.alive?
+          stop_consumer
+          @status = @wait_thr.value
+        end
       end
 
       def clear_buffers

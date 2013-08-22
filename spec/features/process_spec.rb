@@ -61,9 +61,6 @@ describe Nerve::Test::NerveProcess do
 
   it "should start nerve" do
     process.start
-    process.wait
-
-    puts process.stderr
   end
 
 end
