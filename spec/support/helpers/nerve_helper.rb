@@ -24,6 +24,10 @@ module NerveHelper
       @process = nil
     end
 
+    def restart(options={})
+      @process.restart(options)
+    end
+
     def wait_for_up(timeout=5)
       until_timeout(timeout, "Nerve never came up") do
         raise unless @process.up?

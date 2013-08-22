@@ -72,19 +72,21 @@ module ZooKeeperHelper
     end
 
     class Clustered
-      attr_reader :size
+      attr_reader :ensemble_size
       attr_reader :processes
 
       def start(options={})
-        @size = options[:size] || 3
-        @processes = (1..size).map do |index|
+        @ensemble_size = options[:ensemble_size] || 3
+        additional_zoocfg = options[:zoocfg] || {}
+
+        @processes = (1..ensemble_size).map do |index|
           Nerve::ZooKeeperProcess.new(
             :myid => index,
-            :ensemble_size => size,
+            :ensemble_size => ensemble_size,
             :zoocfg => {
               :initLimit => 5,
               :syncLimit => 2
-            })
+            }.merge(additional_zoocfg))
         end
         @processes.each { |p| p.start }
         ZooKeeperHelper.processes = @processes
