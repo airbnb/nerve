@@ -1,0 +1,163 @@
+{
+  "instance_id": "nervedev_machine",
+  "machine_check": {
+    "metric": "cpuidle",
+    "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/machines/stupid",
+    "hold": "60",
+    "up": {
+      "threshold": "30",
+      "condition": "<"
+    },
+    "down": {
+      "threshold": "70",
+      "condition": ">"
+    }
+  },
+  "service_checks": {
+    "stupid_tcp_1": {
+      "port": 4321,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "tcp",
+          "timeout": 0.2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_tcp_1/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_tcp_2": {
+      "port": 4321,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "tcp",
+          "timeout": 0.2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_tcp_2/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_tcp_3": {
+      "port": 4321,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "tcp",
+          "timeout": 0.2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_tcp_3/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_tcp_4": {
+      "port": 4321,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "tcp",
+          "timeout": 0.2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_tcp_4/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_tcp_5": {
+      "port": 4321,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "tcp",
+          "timeout": 0.2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_tcp_5/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_http_1": {
+      "port": 8080,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "http",
+          "uri": "/",
+          "timeout": 2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_http_1/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_http_2": {
+      "port": 8080,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "http",
+          "uri": "/",
+          "timeout": 2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_http_2/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_http_3": {
+      "port": 8080,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "http",
+          "uri": "/",
+          "timeout": 2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_http_3/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_http_4": {
+      "port": 8080,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "http",
+          "uri": "/",
+          "timeout": 2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_http_4/services",
+      "host": "127.0.0.1"
+    },
+    "stupid_http_5": {
+      "port": 8080,
+      "check_interval": 3,
+      "checks": [
+        {
+          "type": "http",
+          "uri": "/",
+          "timeout": 2,
+          "rise": 2,
+          "fall": 1
+        }
+      ],
+      "zk_path": "127.0.0.1:2181,127.0.0.1:3181,127.0.0.1:4181/nervedev/services/stupid_http_5/services",
+      "host": "127.0.0.1"
+    }
+  }
+}
