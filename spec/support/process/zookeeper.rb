@@ -46,7 +46,8 @@ module Nerve
         ],
         :environment => {
           'ZOOCFGDIR' => File.join(@prefix, 'conf'),
-          'ZOO_LOG_DIR' => File.join(@prefix, 'log')
+          'ZOO_LOG_DIR' => File.join(@prefix, 'log'),
+          'JAVA_TOOL_OPTIONS' => '-Djava.awt.headless=true'
         }
       }
 
