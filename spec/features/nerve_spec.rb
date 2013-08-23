@@ -3,8 +3,8 @@ require 'spec_helper'
 describe Nerve do
 
   it "should announce the machine" do
-    zookeeper.single.start
-    zookeeper.single.wait_for_up
+    zookeeper.start
+    zookeeper.wait_for_up
 
     nerve.initialize_zk
 
@@ -23,8 +23,8 @@ describe Nerve do
       :maxSessionTimeout => 2000
     }
 
-    zookeeper.single.start(:zoocfg => zk_options)
-    zookeeper.single.wait_for_up
+    zookeeper.start(:zoocfg => zk_options)
+    zookeeper.wait_for_up
 
     nerve.initialize_zk
 
@@ -47,15 +47,15 @@ describe Nerve do
   end
 
   it "should go down with zookeeeper" do
-    zookeeper.single.start
-    zookeeper.single.wait_for_up
+    zookeeper.start
+    zookeeper.wait_for_up
 
     nerve.initialize_zk
 
     nerve.start
     nerve.wait_for_up
 
-    zookeeper.single.stop(:signal => :KILL)
+    zookeeper.stop(:signal => :KILL)
     nerve.process.wait(:timeout => 10)
 
     nerve.process.should_not be_running
