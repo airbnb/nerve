@@ -16,49 +16,156 @@ describe Nerve do
     end
   end
 
-  it "should announce the machine after a sudden restart" do
-    # Ensure that sessions expire rather quickly.
-    zk_options = {
-      :minSessionTimeout => 2000,
-      :maxSessionTimeout => 2000
-    }
+  context "when restarted" do
 
-    zookeeper.start(:zoocfg => zk_options)
-    zookeeper.wait_for_up
+    context "and reconnects before the session expires" do
 
-    nerve.initialize_zk
+      it "should announce the machine" do
+        # Ensure that sessions expire rather quickly.
+        zk_options = {
+          :minSessionTimeout => 2000,
+          :maxSessionTimeout => 2000
+        }
 
-    nerve.start
-    nerve.wait_for_up
+        zookeeper.start(:zoocfg => zk_options)
+        zookeeper.wait_for_up
 
-    until_timeout(10) do
-      zookeeper.children(nerve.machine_check_path).should_not be_empty
+        nerve.initialize_zk
+
+        nerve.start
+        nerve.wait_for_up
+
+        until_timeout(10) do
+          zookeeper.children(nerve.machine_check_path).should_not be_empty
+        end
+
+        nerve.restart(:signal => :KILL)
+        nerve.wait_for_up
+
+        # Wait for the ephemeral node to possibly disappear.
+        sleep 5
+
+        until_timeout(10) do
+          zookeeper.children(nerve.machine_check_path).should_not be_empty
+        end
+      end
+
     end
 
-    nerve.restart(:signal => :KILL)
-    nerve.wait_for_up
+    context "and reconnects after the session expires" do
 
-    # Wait for the ephemeral node to possibly disappear.
-    sleep 5
+      it "should announce the machine" do
+        # don't start nerve until after the session timeout
+        # ensure ephemeral node exists before and after the session timeout
+      end
 
-    until_timeout(10) do
-      zookeeper.children(nerve.machine_check_path).should_not be_empty
     end
+
   end
 
-  it "should go down with zookeeeper" do
-    zookeeper.start
-    zookeeper.wait_for_up
+  context "when a server in the ensemble is restarted" do
 
-    nerve.initialize_zk
+    it "should not go down" do
+    end
 
-    nerve.start
-    nerve.wait_for_up
+    it "should announce the machine without interruption" do
+    end
 
-    zookeeper.stop(:signal => :KILL)
-    nerve.process.wait(:timeout => 10)
+  end
 
-    nerve.process.should_not be_running
+  context "when the server it is connected to is restarted" do
+
+    it "should not go down" do
+    end
+
+    it "should reconnect to a remaining server in the ensemble" do
+    end
+
+    context "and reconnects before the session expires" do
+
+      it "should announce the machine without interruption" do
+      end
+
+    end
+
+    context "and reconnects after the session expires" do
+
+      it "should announce the machine" do
+      end
+
+    end
+
+  end
+
+  context "when the ensemble loses quorum" do
+
+    it "should not go down" do
+    end
+
+    it "should announce the machine without interruption" do
+    end
+
+  end
+
+  context "when the server it is connected to fails and the ensemble loses quorum" do
+
+    it "should not go down" do
+    end
+
+    it "should reconnect to a remaining server in the ensemble" do
+    end
+
+    context "and quorum is re-established before the session expires" do
+
+      it "should announce the machine without interruption" do # not sure if this is possible, might be interrupted
+      end
+
+    end
+
+    context "and quorum is re-established after the session expires" do
+
+      it "should announce the machine" do
+      end
+
+    end
+
+  end
+
+  context "when the ensemble is unreachbale" do
+
+    it "should not go down" do
+    end
+
+    it "should reconnect" do
+    end
+
+    context "and becomes reachable again before the session expires" do
+
+      it "should announce the machine without interruption" do
+      end
+
+    end
+
+    context "and becomes reachable again after the session expires" do
+
+      it "should announce the machine" do
+      end
+
+    end
+
+  end
+
+  context "when the ensemble fails completely" do
+
+    it "should not go down" do
+    end
+
+    it "should reconnect" do
+    end
+
+    it "should announce the machine" do
+    end
+
   end
 
 end
