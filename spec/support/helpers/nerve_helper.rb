@@ -7,15 +7,18 @@ module NerveHelper
   class DSL
     attr_reader :process
 
+    def configure(config={})
+      @process = Nerve::NerveProcess.new(config.merge(zk_config))
+    end
+
     def initialize_zk
       ZooKeeperHelper.zk.tap do |zk|
-        zk.create('/services', '')
-        zk.create('/machines', '')
+        zk.create(@process.machine_check_root, '')
+        zk.create(@process.service_check_root, '')
       end
     end
 
-    def start(config={})
-      @process = Nerve::NerveProcess.new(config.merge(zk_config))
+    def start
       @process.start
     end
 
@@ -45,6 +48,10 @@ module NerveHelper
 
     def machine_check_path
       @process.machine_check_path
+    end
+
+    def service_check_path
+      @process.service_check_path
     end
 
   end

@@ -2,11 +2,21 @@ require 'spec_helper'
 
 describe Nerve do
 
-  it "should announce the machine" do
-    zookeeper.start
+  # Ensure that sessions expire rather quickly.
+  let(:zookeeper_config) { { :minSessionTimeout => 2000, :maxSessionTimeout => 2000 } }
+  let(:zookeeper_options) { { :zoocfg => zookeeper_config } }
+
+  let(:nerve_config) { {} }
+
+  before do
+    zookeeper.start(zookeeper_options)
     zookeeper.wait_for_up
 
+    nerve.configure(nerve_config)
     nerve.initialize_zk
+  end
+
+  it "should announce the machine" do
 
     nerve.start
     nerve.wait_for_up
@@ -21,17 +31,6 @@ describe Nerve do
     context "and reconnects before the session expires" do
 
       it "should announce the machine" do
-        # Ensure that sessions expire rather quickly.
-        zk_options = {
-          :minSessionTimeout => 2000,
-          :maxSessionTimeout => 2000
-        }
-
-        zookeeper.start(:zoocfg => zk_options)
-        zookeeper.wait_for_up
-
-        nerve.initialize_zk
-
         nerve.start
         nerve.wait_for_up
 

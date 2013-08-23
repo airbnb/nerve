@@ -55,12 +55,20 @@ module Nerve
       stderr =~ /nerve: starting run/
     end
 
+    def machine_check_root
+      "#{zk_path}machines"
+    end
+
     def machine_check_path
-      "#{zk_path}machines/#{role}"
+      "#{machine_check_root}/#{role}"
+    end
+
+    def service_check_root
+      "#{zk_path}services"
     end
 
     def service_check_path(service_name)
-      "#{zk_path}services/#{service_name}"
+      "#{service_check_root}/#{service_name}"
     end
 
     def default_machine_check
