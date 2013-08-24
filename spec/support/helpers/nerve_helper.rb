@@ -31,8 +31,8 @@ module NerveHelper
       @process.start
     end
 
-    def stop
-      @process.stop
+    def stop(options={})
+      @process.stop(options={})
       @process = nil
     end
 

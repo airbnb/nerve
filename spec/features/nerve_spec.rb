@@ -62,8 +62,39 @@ describe Nerve do
     context "and reconnects after the session expires" do
 
       it "should announce the machine" do
-        # don't start nerve until after the session timeout
-        # ensure ephemeral node exists before and after the session timeout
+        nerve.start
+        nerve.wait_for_up
+
+        until_timeout(10) do
+          zookeeper.get(nerve.machine_check_node).last.exists.should be_true
+        end
+
+        node_deleted = false
+        zookeeper.watch(nerve.machine_check_path) do |event|
+          node_deleted = true
+        end
+
+        nerve.stop(:signal => :KILL)
+
+        # Wait for session timeout.
+        sleep 3
+
+        until_timeout(10) do
+          node_deleted.should be_true
+        end
+
+        nerve.configure(nerve_config)
+
+        until_timeout(10) do
+          zookeeper.children(nerve.machine_check_path).should be_empty
+        end
+
+        nerve.start
+        nerve.wait_for_up
+
+        until_timeout(10) do
+          zookeeper.get(nerve.machine_check_node).last.exists.should be_true
+        end
       end
 
     end
