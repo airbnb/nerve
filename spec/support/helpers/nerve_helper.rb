@@ -5,7 +5,16 @@ module NerveHelper
   end
 
   class DSL
+    extend Forwardable
+
     attr_reader :process
+
+    def_delegators :process,
+      :machine_check_root,
+      :machine_check_path,
+      :machine_check_node,
+      :service_check_root,
+      :service_check_path
 
     def configure(config={})
       @process = Nerve::NerveProcess.new(config.merge(zk_config))
@@ -44,14 +53,6 @@ module NerveHelper
 
     def zk_config
       {:zk_servers => ZooKeeperHelper.sockets}
-    end
-
-    def machine_check_path
-      @process.machine_check_path
-    end
-
-    def service_check_path
-      @process.service_check_path
     end
 
   end

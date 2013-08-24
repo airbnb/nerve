@@ -26,12 +26,17 @@ module ZooKeeperHelper
       processes[0].zk
     end
 
-    def get(path)
-      zk.get(path)
+    def get(path, options={})
+      zk.get(path, options)
     end
 
-    def children(path)
-      zk.children(path)
+    def children(path, options={})
+      zk.children(path, options)
+    end
+
+    def watch(path, options={}, &callback)
+      zk.register(path, options, &callback)
+      children(path, :watch => true)
     end
 
     def start(options={})

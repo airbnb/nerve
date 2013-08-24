@@ -63,6 +63,10 @@ module Nerve
       "#{machine_check_root}/#{role}"
     end
 
+    def machine_check_node
+      "#{machine_check_path}/#{instance_id}"
+    end
+
     def service_check_root
       "#{zk_path}services"
     end

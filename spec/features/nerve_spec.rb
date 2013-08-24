@@ -17,12 +17,11 @@ describe Nerve do
   end
 
   it "should announce the machine" do
-
     nerve.start
     nerve.wait_for_up
 
     until_timeout(10) do
-      zookeeper.children(nerve.machine_check_path).should_not be_empty
+      zookeeper.get(nerve.machine_check_node).last.exists.should be_true
     end
   end
 
@@ -35,17 +34,26 @@ describe Nerve do
         nerve.wait_for_up
 
         until_timeout(10) do
-          zookeeper.children(nerve.machine_check_path).should_not be_empty
+          zookeeper.get(nerve.machine_check_node).last.exists.should be_true
+        end
+
+        node_deleted = false
+        zookeeper.watch(nerve.machine_check_path) do |event|
+          # This should trigger as soon as the ephemeral node disappears.
+          node_deleted = true
+
+          # Make sure the node is re-created.
+          until_timeout(10) do
+            zookeeper.get(nerve.machine_check_node).last.exists.should be_true
+          end
         end
 
         nerve.restart(:signal => :KILL)
         nerve.wait_for_up
 
-        # Wait for the ephemeral node to possibly disappear.
-        sleep 5
-
+        # Ensure that the watch callback fired.
         until_timeout(10) do
-          zookeeper.children(nerve.machine_check_path).should_not be_empty
+          node_deleted.should be_true
         end
       end
 
