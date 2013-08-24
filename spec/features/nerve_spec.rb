@@ -38,7 +38,7 @@ describe Nerve do
         end
 
         node_deleted = false
-        zookeeper.watch(nerve.machine_check_path) do |event|
+        zookeeper.watch(nerve.machine_check_node, :only => :deleted) do |event|
           # This should trigger as soon as the ephemeral node disappears.
           node_deleted = true
 
@@ -70,7 +70,7 @@ describe Nerve do
         end
 
         node_deleted = false
-        zookeeper.watch(nerve.machine_check_path) do |event|
+        zookeeper.watch(nerve.machine_check_node, :only => :deleted) do |event|
           node_deleted = true
         end
 
@@ -84,11 +84,6 @@ describe Nerve do
         end
 
         nerve.configure(nerve_config)
-
-        until_timeout(10) do
-          zookeeper.children(nerve.machine_check_path).should be_empty
-        end
-
         nerve.start
         nerve.wait_for_up
 

@@ -36,7 +36,7 @@ module ZooKeeperHelper
 
     def watch(path, options={}, &callback)
       zk.register(path, options, &callback)
-      children(path, :watch => true)
+      get(path, :watch => true)
     end
 
     def start(options={})
