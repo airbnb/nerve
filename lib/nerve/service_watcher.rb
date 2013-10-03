@@ -3,6 +3,7 @@ require 'nerve/service_watcher/http'
 
 module Nerve
   class ServiceWatcher
+    attr_accessor :name, :expires, :expires_at, :sha1
     include Utils
     include Logging
 
@@ -16,6 +17,10 @@ module Nerve
 
       @zk_key = "#{@instance_id}_#{@name}"
       @check_interval = opts['check_interval'] || 0.5
+      @last_check = 0
+      @expires = false
+      @expires_at = Time.now.to_i + 60
+      @sha1 = opts['sha1']
 
       # instantiate the checks for this watcher
       @service_checks = []
@@ -38,7 +43,12 @@ module Nerve
       log.debug "nerve: created service watcher for #{@name} with #{@service_checks.size} checks"
     end
 
-    def run()
+    def close!
+      log.info "nerve: ending service watch #{@name}"
+      @reporter.close!
+    end
+
+    def init
       log.info "nerve: starting service watch #{@name}"
 
       # create zookeeper connection
@@ -48,34 +58,40 @@ module Nerve
           'data' => {'host' => @host, 'port' => @port},
         })
 
-      was_up = false
-      until $EXIT
-        @reporter.ping?
+      @was_up = false
+    rescue StandardError => e
+      log.error "nerve: error in service watcher #{@name}: #{e}"
+      raise e
+    end
 
-        # what is the status of the service?
-        is_up = check?
-        log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
+    def run
+      now = Time.now.to_i
+      if now < @last_check + @check_interval
+        return
+      end
+      @last_check = now
 
-        if is_up != was_up
-          if is_up
-            @reporter.report_up
-            log.info "nerve: service #{@name} is now up"
-          else
-            @reporter.report_down
-            log.warn "nerve: service #{@name} is now down"
-          end
-          was_up = is_up
+      log.debug "nerve: running service watch #{@name}"
+
+      @reporter.ping?
+
+      # what is the status of the service?
+      is_up = check?
+      log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
+
+      if is_up != @was_up
+        if is_up
+          @reporter.report_up
+          log.info "nerve: service #{@name} is now up"
+        else
+          @reporter.report_down
+          log.warn "nerve: service #{@name} is now down"
         end
-
-        # wait to run more checks
-        sleep @check_interval
+        @was_up = is_up
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e}"
       raise e
-    ensure
-      log.info "nerve: ending service watch #{@name}"
-      $EXIT = true
     end
 
     def check?

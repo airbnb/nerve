@@ -27,12 +27,12 @@ EOB
 
 end
 
-
 # parse command line arguments
 optparse.parse!
 
+config = nil
 
-# parse nerve config file
+# parse config file
 begin
   config = JSON::parse(File.read(options[:config]))
 rescue TypeError => e
@@ -42,11 +42,9 @@ rescue Errno::ENOENT => e
 rescue Errno::EACCES => e
   raise ArgumentError, "could not open config file:\n#{e.inspect}"
 rescue JSON::ParserError => e
-  raise "config file #{options[:config]} is not json:\n#{e.inspect}"
+  puts "config file #{options[:config]} is not json:\n#{e.inspect}"
 end
 
-
-# create nerve object
 s = Nerve::Nerve.new config
 
 # start nerve

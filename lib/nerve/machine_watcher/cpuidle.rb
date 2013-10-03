@@ -85,7 +85,7 @@ module Nerve
           # otherwise, we haven't been called yet, so call ourselves...
           @previous_total = total
           @previous_idle = idle
-          sleep 0.1
+          sleep 5
           return get_idle
         end
       end

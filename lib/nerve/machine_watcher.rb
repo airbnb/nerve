@@ -24,7 +24,12 @@ module Nerve
       @machine_check = machine_check_class.new(opts)
     end
 
-    def run
+    def close!
+      log.info 'nerve: ending machine watch'
+      @reporter.close!
+    end
+
+    def init
       log.info 'nerve: starting machine watch'
 
       @reporter = Reporter.new({
@@ -34,29 +39,29 @@ module Nerve
         })
       @reporter.report_up
 
-      previous_vote = 0
+      @previous_vote = 0
+    rescue StandardError => e
+      log.error "nerve: error in machine watcher: #{e}"
+      raise e
+    end
 
-      until $EXIT
-        @reporter.ping?
+    def run
+      log.debug 'nerve: running machine watch'
 
-        @machine_check.poll
-        vote = @machine_check.vote
-        log.debug "nerve: current vote is #{vote}"
+      @reporter.ping?
 
-        if vote != previous_vote
-          @reporter.update_data({'vote'=>vote})
-          previous_vote = vote
-          log.info "nerve: vote changed to #{vote}"
-        end
+      @machine_check.poll
+      vote = @machine_check.vote
+      log.debug "nerve: current vote is #{vote}"
 
-        sleep 1
+      if vote != @previous_vote
+        @reporter.update_data({'vote'=>vote})
+        @previous_vote = vote
+        log.info "nerve: vote changed to #{vote}"
       end
     rescue StandardError => e
       log.error "nerve: error in machine watcher: #{e}"
       raise e
-    ensure
-      log.info 'nerve: ending machine watch'
-      $EXIT = true
     end
   end
 end
