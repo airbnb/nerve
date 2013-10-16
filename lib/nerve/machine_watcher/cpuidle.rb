@@ -53,8 +53,11 @@ module Nerve
       end
 
       def get_idle
+        metrics = []
         begin
-          metrics = File.readlines('/proc/stat')
+          File.open('/proc/stat', 'r') do |f|
+            metrics = f.readlines('/proc/stat')
+          end
         rescue Errno::ENOENT
           log.warn "Cannot get CPU idle info; no /proc/stat" unless @no_idle
           @no_idle = true
