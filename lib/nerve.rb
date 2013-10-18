@@ -8,10 +8,8 @@ require_relative './nerve/log'
 require_relative './nerve/ring_buffer'
 require_relative './nerve/reporter'
 require_relative './nerve/service_watcher'
-require_relative './nerve/machine_watcher'
 
 module Nerve
-  # Your code goes here...
   class Nerve
 
     include Logging
@@ -31,7 +29,7 @@ module Nerve
 
       # required options
       log.debug 'nerve: checking for required inputs'
-      %w{instance_id service_checks machine_check}.each do |required|
+      %w{instance_id service_checks}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
         instance_variable_set("@#{required}",opts[required])
       end
@@ -45,10 +43,6 @@ module Nerve
         @service_watchers << ServiceWatcher.new(params.merge({'instance_id' => @instance_id, 'name' => name}))
       end
 
-      # create machine watcher object
-      log.debug 'nerve: creating machine watcher'
-      @machine_check = MachineWatcher.new(opts['machine_check'].merge({'instance_id' => @instance_id}))
-
       log.debug 'nerve: completed init'
     end
 
@@ -56,8 +50,6 @@ module Nerve
       log.info 'nerve: starting run'
       begin
         children = []
-        log.debug 'nerve: launching machine check thread'
-        children << Thread.new{@machine_check.run}
 
         log.debug 'nerve: launching service check threads'
         @service_watchers.each do |watcher|
