@@ -6,20 +6,23 @@ module Nerve
     include Logging
 
     def initialize(opts)
-      %w{path key}.each do |required|
+      %w{hosts path key}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
-        instance_variable_set("@#{required}",opts[required])
       end
-      @data = parse_data(opts['data'] ? opts['data'] : '')
-      @key.insert(0,'/') unless @key[0] == '/'
 
+      @path = opts['hosts'].shuffle.join(',') + opts['path']
+      @data = parse_data(opts['data'] || '')
+      @key = opts['key']
+      @key.insert(0,'/') unless @key[0] == '/'
+    end
+
+    def start()
       log.info "nerve: waiting to connect to zookeeper at #{@path}"
       @zk = ZK.new(@path)
 
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
-    #TODO(is): need to check ownership of znodes to resolve name conflicts
     def report_up()
       zk_save
     end

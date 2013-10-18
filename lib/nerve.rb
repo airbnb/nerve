@@ -29,18 +29,17 @@ module Nerve
 
       # required options
       log.debug 'nerve: checking for required inputs'
-      %w{instance_id service_checks}.each do |required|
+      %w{instance_id services}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
-        instance_variable_set("@#{required}",opts[required])
       end
 
+      @instance_id = opts['instance_id']
 
       # create service watcher objects
       log.debug 'nerve: creating service watchers'
-      opts['service_checks'] ||= {}
       @service_watchers=[]
-      opts['service_checks'].each do |name,params|
-        @service_watchers << ServiceWatcher.new(params.merge({'instance_id' => @instance_id, 'name' => name}))
+      opts['services'].each do |name, config|
+        @service_watchers << ServiceWatcher.new(config.merge({'instance_id' => @instance_id, 'name' => name}))
       end
 
       log.debug 'nerve: completed init'
