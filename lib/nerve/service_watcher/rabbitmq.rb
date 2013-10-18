@@ -49,7 +49,7 @@ module Nerve
           log.debug "nerve: consuming from rabbitmq"
           delivery_info, properties, payload = ch.basic_get('nerve', :ack => true)
 
-          if payload:
+          if payload
             ch.acknowledge(delivery_info.delivery_tag)
             return true
           else

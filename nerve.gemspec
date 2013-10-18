@@ -18,4 +18,5 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_runtime_dependency "zk", "~> 1.7.4"
+  gem.add_runtime_dependency "bunny", "= 1.0.0.rc2"
 end
