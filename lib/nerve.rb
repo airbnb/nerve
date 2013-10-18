@@ -2,16 +2,14 @@ require 'logger'
 require 'json'
 require 'timeout'
 
-require_relative './nerve/version'
-require_relative './nerve/utils'
-require_relative './nerve/log'
-require_relative './nerve/ring_buffer'
-require_relative './nerve/reporter'
-require_relative './nerve/service_watcher'
-require_relative './nerve/machine_watcher'
+require 'nerve/version'
+require 'nerve/utils'
+require 'nerve/log'
+require 'nerve/ring_buffer'
+require 'nerve/reporter'
+require 'nerve/service_watcher'
 
 module Nerve
-  # Your code goes here...
   class Nerve
 
     include Logging
@@ -31,23 +29,18 @@ module Nerve
 
       # required options
       log.debug 'nerve: checking for required inputs'
-      %w{instance_id service_checks machine_check}.each do |required|
+      %w{instance_id services}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
-        instance_variable_set("@#{required}",opts[required])
       end
 
+      @instance_id = opts['instance_id']
 
       # create service watcher objects
       log.debug 'nerve: creating service watchers'
-      opts['service_checks'] ||= {}
       @service_watchers=[]
-      opts['service_checks'].each do |name,params|
-        @service_watchers << ServiceWatcher.new(params.merge({'instance_id' => @instance_id, 'name' => name}))
+      opts['services'].each do |name, config|
+        @service_watchers << ServiceWatcher.new(config.merge({'instance_id' => @instance_id, 'name' => name}))
       end
-
-      # create machine watcher object
-      log.debug 'nerve: creating machine watcher'
-      @machine_check = MachineWatcher.new(opts['machine_check'].merge({'instance_id' => @instance_id}))
 
       log.debug 'nerve: completed init'
     end
@@ -56,8 +49,6 @@ module Nerve
       log.info 'nerve: starting run'
       begin
         children = []
-        log.debug 'nerve: launching machine check thread'
-        children << Thread.new{@machine_check.run}
 
         log.debug 'nerve: launching service check threads'
         @service_watchers.each do |watcher|

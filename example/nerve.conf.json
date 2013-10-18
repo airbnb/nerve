@@ -1,23 +1,11 @@
 {
   "instance_id": "mymachine",
-  "machine_check": {
-    "metric": "cpuidle",
-    "hold": "60",
-    "up": {
-      "threshold": "30",
-      "condition": "<"
-    },
-    "down": {
-      "threshold": "70",
-      "condition": ">"
-    },
-    "zk_path": "localhost:2181/nerve/services/awesome_service/machines"
-  },
-  "service_checks": {
+  "services": {
     "your_http_service": {
       "port": 3000,
       "host": "127.0.0.1",
-      "zk_path": "localhost:2181/nerve/services/your_http_service/services",
+      "zk_hosts": ["localhost:2181"],
+      "zk_path": "/nerve/services/your_http_service/services",
       "check_interval": 2,
       "checks": [
         {
@@ -32,7 +20,8 @@
     "your_tcp_service": {
       "port": 6379,
       "host": "127.0.0.1",
-      "zk_path": "localhost:2181/nerve/services/your_tcp_service/services",
+      "zk_hosts": ["localhost:2181"],
+      "zk_path": "/nerve/services/your_tcp_service/services",
       "check_interval": 2,
       "checks": [
         {
@@ -46,7 +35,8 @@
     "rabbitmq_service": {
       "port": 5672,
       "host": "127.0.0.1",
-      "zk_path": "localhost:2181/nerve/services/your_tcp_service/services",
+      "zk_hosts": ["localhost:2181"],
+      "zk_path": "/nerve/services/your_rabbitmq_service/services",
       "check_interval": 2,
       "checks": [
         {

@@ -1,27 +1,34 @@
-require_relative './service_watcher/tcp'
-require_relative './service_watcher/http'
-require_relative './service_watcher/rabbitmq'
+require 'nerve/service_watcher/tcp'
+require 'nerve/service_watcher/http'
+require 'nerve/service_watcher/rabbitmq'
 
 module Nerve
   class ServiceWatcher
     include Utils
     include Logging
 
-    def initialize(opts={})
+    def initialize(service={})
       log.debug "nerve: creating service watcher object"
 
-      %w{port host zk_path instance_id name}.each do |required|
-        raise ArgumentError, "missing required argument #{required} for new service watcher" unless opts[required]
-        instance_variable_set("@#{required}", opts[required])
+      # check that we have all of the required arguments
+      %w{name instance_id host port zk_hosts zk_path}.each do |required|
+        raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
 
-      @zk_key = "#{@instance_id}_#{@name}"
-      @check_interval = opts['check_interval'] || 0.5
+      @name = service['name']
 
-      # instantiate the checks for this watcher
+      # configure the reporter, which we use for talking to zookeeper
+      @reporter = Reporter.new({
+          'hosts' => service['zk_hosts'],
+          'path' => service['zk_path'],
+          'key' => "#{service['instance_id']}_#{@name}",
+          'data' => {'host' => service['host'], 'port' => service['port']},
+        })
+
+      # instantiate the checks for this service
       @service_checks = []
-      opts['checks'] ||= []
-      opts['checks'].each do |check|
+      service['checks'] ||= []
+      service['checks'].each do |check|
         check['type'] ||= "undefined"
         begin
           service_check_class = ServiceCheck::CHECKS[check['type']]
@@ -30,11 +37,14 @@ module Nerve
             "invalid service check type #{check['type']}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
         end
 
-        check['host'] ||= @host
-        check['port'] ||= @port
+        check['host'] ||= service['host']
+        check['port'] ||= service['port']
         check['name'] ||= "#{@name} #{check['type']}-#{check['host']}:#{check['port']}"
         @service_checks << service_check_class.new(check)
       end
+
+      # how often do we initiate service checks?
+      @check_interval = service['check_interval'] || 0.5
 
       log.debug "nerve: created service watcher for #{@name} with #{@service_checks.size} checks"
     end
@@ -42,14 +52,11 @@ module Nerve
     def run()
       log.info "nerve: starting service watch #{@name}"
 
-      # create zookeeper connection
-      @reporter = Reporter.new({
-          'path' => @zk_path,
-          'key' => @zk_key,
-          'data' => {'host' => @host, 'port' => @port},
-        })
-
+      # begin by reporting down
+      @reporter.start()
+      @reporter.report_down
       was_up = false
+
       until $EXIT
         @reporter.ping?
 
