@@ -52,7 +52,9 @@ module Nerve
     def run()
       log.info "nerve: starting service watch #{@name}"
 
+      # begin by reporting down
       @reporter.start()
+      @reporter.report_down
       was_up = false
 
       until $EXIT
