@@ -6,8 +6,8 @@ require 'nerve/version'
 Gem::Specification.new do |gem|
   gem.name          = "nerve"
   gem.version       = Nerve::VERSION
-  gem.authors       = ["Martin Rhoads"]
-  gem.email         = ["martin.rhoads@airbnb.com"]
+  gem.authors       = ["Martin Rhoads", "Igor Serebryany", "Pierre Carrier"]
+  gem.email         = ["martin.rhoads@airbnb.com", "igor.serebryany@airbnb.com"]
   gem.description   = %q{description}
   gem.summary       = %q{summary}
   gem.homepage      = ""
@@ -16,5 +16,6 @@ Gem::Specification.new do |gem|
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
-  gem.add_dependency 'zk'
+
+  gem.add_runtime_dependency "zk", "~> 1.7.4"
 end
