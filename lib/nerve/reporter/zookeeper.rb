@@ -6,6 +6,10 @@ module Nerve
     include Logging
 
     def initialize(opts)
+      # Maintain compatibility with configs
+      opts['hosts'] ||= opts['zk_hosts']
+      opts['path'] ||= opts['zk_path']
+
       %w{hosts path key}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
       end
