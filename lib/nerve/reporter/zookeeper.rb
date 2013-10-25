@@ -1,7 +1,7 @@
 require 'zk'
 
 module Nerve
-  class Reporter
+  class ZookeeperReporter
     include Utils
     include Logging
 
