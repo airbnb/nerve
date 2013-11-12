@@ -31,20 +31,31 @@ end
 # parse command line arguments
 optparse.parse!
 
-
-# parse nerve config file
-begin
-  config = JSON::parse(File.read(options[:config]))
-rescue TypeError => e
-  raise ArgumentError, "you must pass in a '--config' option"
-rescue Errno::ENOENT => e
-  raise ArgumentError, "config file does not exist:\n#{e.inspect}"
-rescue Errno::EACCES => e
-  raise ArgumentError, "could not open config file:\n#{e.inspect}"
-rescue JSON::ParserError => e
-  raise "config file #{options[:config]} is not json:\n#{e.inspect}"
+def parseconfig(filename)
+  # parse synapse config file
+  begin
+    c = JSON::parse(File.read(filename))
+  rescue Errno::ENOENT => e
+    raise ArgumentError, "config file does not exist:\n#{e.inspect}"
+  rescue Errno::EACCES => e
+    raise ArgumentError, "could not open config file:\n#{e.inspect}"
+  rescue JSON::ParserError => e
+    raise "config file #{filename} is not json:\n#{e.inspect}"
+  end
+  return c
 end
 
+config = parseconfig(options[:config])
+config['services'] ||= {}
+
+if config.has_key?('service_conf_dir')
+  cdir = File.expand_path(config['service_conf_dir'])
+  if ! Dir.exists?(cdir) then
+    raise "service conf dir does not exist:#{cdir}"
+  end
+  cfiles = Dir.glob(File.join(cdir, '*.json'))
+  cfiles.each { |x| config['services'][File.basename(x[/(.*)\.json$/, 1])] = parseconfig(x) }
+end
 
 # create nerve object
 s = Nerve::Nerve.new config

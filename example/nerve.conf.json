@@ -1,5 +1,6 @@
 {
   "instance_id": "mymachine",
+  "service_conf_dir": "example/nerve_services",
   "services": {
     "your_http_service": {
       "port": 3000,
