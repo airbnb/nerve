@@ -51,7 +51,7 @@ module Nerve
       begin
         @zk.set(@key,@data)
       rescue ZK::Exceptions::NoNode => e
-        @zk.create(@key,:data => @data, :mode => :ephemeral)
+        @zk.create(@key,:data => @data, :mode => :ephemeral_sequential)
       end
     end
 
