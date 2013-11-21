@@ -10,10 +10,16 @@ module Nerve
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
       end
 
+      defaults = {
+        :sequential => false,
+      }
+      opts = defaults.merge(opts)
+
       @path = opts['hosts'].shuffle.join(',') + opts['path']
       @data = parse_data(opts['data'] || '')
       @key = opts['key']
       @key.insert(0,'/') unless @key[0] == '/'
+      @sequential = opts['sequential']
     end
 
     def start()
@@ -23,17 +29,17 @@ module Nerve
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
-    def report_up(sequential=false)
-      zk_save(sequential)
+    def report_up
+      zk_save
     end
 
     def report_down
       zk_delete
     end
 
-    def update_data(new_data='', sequential=false)
+    def update_data(new_data='')
       @data = parse_data(new_data)
-      zk_save(sequential)
+      zk_save
     end
 
     def ping?
@@ -46,12 +52,13 @@ module Nerve
       @zk.delete(@key, :ignore => :no_node)
     end
 
-    def zk_save(sequential=false)
-      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect} and sequential flag is #{sequential}"
+    def zk_save
+      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect} and sequential 
+      flag is #{@sequential}"
       begin
         @zk.set(@key,@data)
       rescue ZK::Exceptions::NoNode => e
-        @zk.create(@key,:data => @data, :ephemeral => true, :sequential => sequential)
+        @zk.create(@key,:data => @data, :ephemeral => true, :sequential => @sequential)
       end
     end
 
