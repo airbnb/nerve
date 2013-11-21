@@ -23,17 +23,17 @@ module Nerve
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
-    def report_up()
-      zk_save
+    def report_up(sequential=false)
+      zk_save(sequential)
     end
 
     def report_down
       zk_delete
     end
 
-    def update_data(new_data='')
+    def update_data(new_data='', sequential=false)
       @data = parse_data(new_data)
-      zk_save
+      zk_save(sequential)
     end
 
     def ping?
@@ -46,12 +46,12 @@ module Nerve
       @zk.delete(@key, :ignore => :no_node)
     end
 
-    def zk_save
-      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect}"
+    def zk_save(sequential=false)
+      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect} and sequential flag is #{sequential}"
       begin
         @zk.set(@key,@data)
       rescue ZK::Exceptions::NoNode => e
-        @zk.create(@key,:data => @data, :mode => :ephemeral_sequential)
+        @zk.create(@key,:data => @data, :ephemeral => true, :sequential => sequential)
       end
     end
 
