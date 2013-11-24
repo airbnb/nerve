@@ -20,6 +20,8 @@ module Nerve
       @key = opts['key']
       @key.insert(0,'/') unless @key[0] == '/'
       @sequential = opts['sequential']
+      @key.insert('-') if @sequential
+      @full_key = @key
     end
 
     def start()
@@ -49,16 +51,17 @@ module Nerve
     private
 
     def zk_delete
-      @zk.delete(@key, :ignore => :no_node)
+      @zk.delete(@full_key, :ignore => :no_node)
     end
 
     def zk_save
       log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect} and sequential 
       flag is #{@sequential}"
       begin
-        @zk.set(@key,@data)
+        @zk.set(@full_key, @data)
       rescue ZK::Exceptions::NoNode => e
-        @zk.create(@key,:data => @data, :ephemeral => true, :sequential => @sequential)
+        @full_key = @zk.create(@key,:data => @data, :ephemeral => true, 
+          :sequential => @sequential)
       end
     end
 
