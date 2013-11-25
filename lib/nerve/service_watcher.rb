@@ -23,7 +23,7 @@ module Nerve
           'path' => service['zk_path'],
           'key' => "#{service['instance_id']}_#{@name}",
           'data' => {'host' => service['host'], 'port' => service['port']},
-          'sequential' => service['sequential'] | false
+          'sequential' => service['sequential'] || false
         })
 
       # instantiate the checks for this service

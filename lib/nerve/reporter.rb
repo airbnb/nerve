@@ -10,16 +10,11 @@ module Nerve
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
       end
 
-      defaults = {
-        :sequential => false,
-      }
-      opts = defaults.merge(opts)
-
       @path = opts['hosts'].shuffle.join(',') + opts['path']
       @data = parse_data(opts['data'] || '')
       @key = opts['key']
       @key.insert(0,'/') unless @key[0] == '/'
-      @sequential = opts['sequential']
+      @sequential = opts['sequential'] || false
       @key.insert('-') if @sequential
       @full_key = @key
     end
@@ -55,8 +50,8 @@ module Nerve
     end
 
     def zk_save
-      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect} and sequential 
-      flag is #{@sequential}"
+      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect} and sequential " \
+        "flag is #{@sequential}"
       begin
         @zk.set(@full_key, @data)
       rescue ZK::Exceptions::NoNode => e
