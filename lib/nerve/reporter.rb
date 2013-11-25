@@ -15,7 +15,7 @@ module Nerve
       @key = opts['key']
       @key.insert(0,'/') unless @key[0] == '/'
       @sequential = opts['sequential'] || false
-      @key.insert('-') if @sequential
+      @key << '-' if @sequential
       @full_key = @key
     end
 
