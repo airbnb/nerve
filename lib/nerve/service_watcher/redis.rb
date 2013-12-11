@@ -32,7 +32,7 @@ module Nerve
           log.info "nerve: unable to connect with redis #{@name} #{e}"
           return false
         ensure
-          redis.disconnect if redis
+          redis.quit if redis
         end
       end
     end
