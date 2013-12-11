@@ -46,6 +46,19 @@
           "password": "guest"
         }
       ]
+    },
+    "redis_service": {
+      "host": "127.0.0.1",
+      "port": 6379,
+      "zk_hosts": ["localhost:2181"],
+      "zk_path": "/nerve/services/your_redis_service/services",
+      "check_interval": 2,
+      "checks": [
+        {
+          "type": "redis",
+          "db": 0,
+        }
+      ]
     }
   }
 }
