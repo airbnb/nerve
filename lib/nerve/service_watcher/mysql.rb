@@ -20,7 +20,13 @@ module Nerve
       def check
         log.debug "nerve: running @host = opts['host'] health check #{@name}"
 
-        response = `mysql --user #{@user} -p#{@password} --host #{@host} --port #{@port} --database #{@dbname} -Bse 'select 1' 2>&1`
+        mysql_path = `which mysql 2>&1`
+        log.debug("mysql path: #{mysql_path}")    
+        raise "failed to connect with mysql: #{mysql_path}" unless $?.success?
+
+        command = "#{mysql_path.strip} --user #{@user} -p#{@password} --host #{@host} --port #{@port} --database #{@dbname} -Bse 'select 1' 2>&1"
+        log.debug("command: #{command}")
+        response = `#{command}`
         log.debug("response: #{response}")
         raise "failed to connect with mysql: #{response}" unless $?.success?
 
