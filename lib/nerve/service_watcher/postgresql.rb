@@ -1,5 +1,4 @@
 require 'nerve/service_watcher/base'
-require 'pg'
 
 module Nerve
   module ServiceCheck
@@ -22,28 +21,20 @@ module Nerve
         # The best way to check postgresql is alive to query
         log.debug "nerve: running @host = opts['host'] health check #{@name}"
 
-        begin
-          conn = PGconn.new(
-                    :host => @host,
-                    :port => @port,
-                    :dbname => @dbname,
-                    :user => @user,
-                    :password => @password
-                  )
+        psql_path = `which psql 2>&1`
+        log.debug("psql path: #{psql_path}")    
+        raise "failed to connect with postgres: #{psql_path}" unless $?.success?
 
-          res = conn.exec('select 1')
-          data = res.getvalue(0,0)
-          if data
-            return true
-          else
-            log.debug "nerve: postgresql failed to responde"
-            return false
-          end
-        rescue PG::Error => e
-          log.debug "nerve: unable to connect with postgresql #{e}"
+        command = "#{psql_path.strip} --host #{@host} --port #{@port} --user #{@user} --dbname #{@dbname} -c 'select 1' --tuples-only"
+        log.debug("command: #{command}")
+        response = `#{command}`
+        log.debug("response: #{response}")
+        raise "failed to connect with psql: #{response}" unless $?.success?
+
+        if response.strip == "1"
+          return true
+        else
           return false
-        ensure
-          conn.close if conn
         end
       end
     end
