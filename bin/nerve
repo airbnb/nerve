@@ -20,6 +20,11 @@ EOB
     options[:config] = key
   end
 
+  options[:instance_id] = ENV['NERVE_INSTANCE_ID']
+  opts.on('-i instanceId','--instance_id instanceId', String, 'Nerve instance id') do |key,value|
+    options[:instance_id] = key
+  end
+
   opts.on( '-h', '--help', 'Display this screen' ) do
     puts opts
     exit
@@ -55,6 +60,10 @@ if config.has_key?('service_conf_dir')
   end
   cfiles = Dir.glob(File.join(cdir, '*.json'))
   cfiles.each { |x| config['services'][File.basename(x[/(.*)\.json$/, 1])] = parseconfig(x) }
+end
+
+if options.key?(:instance_id)
+  config['instance_id'] = options[:instance_id]
 end
 
 # create nerve object
