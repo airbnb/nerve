@@ -16,7 +16,7 @@ module Nerve
 
       def up?
         # do the check
-        check_result = !!ignore_errors do
+        check_result = !!catch_errors do
           check
         end
 
@@ -44,6 +44,15 @@ module Nerve
 
         # otherwise return the last result
         return @last_result
+      end
+
+      def catch_errors(&block)
+        begin
+          return yield
+        rescue Object => error
+          log.info "nerve: service check #{@name} got error #{error.inspect}"
+          return false
+        end
       end
     end
   end
