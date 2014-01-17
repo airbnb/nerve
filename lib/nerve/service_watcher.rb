@@ -12,11 +12,15 @@ module Nerve
       'zookeeper' => ZookeeperReporter
     }
 
+    def self.add_reporter(key, klass)
+      @reporters[key] = klass
+    end
+
     def initialize(service={})
       log.debug "nerve: creating service watcher object"
 
       # check that we have all of the required arguments
-      %w{name instance_id host port zk_hosts zk_path}.each do |required|
+      %w{name instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
 
@@ -24,10 +28,16 @@ module Nerve
 
       # default to zk
       meth = service['method'] || 'zookeeper'
+
+      unless @reporters[meth]
+        if m = service['module']
+          require m
+        end
+      end
+
       @reporter = @reporters[meth].new(
                                        service.merge(
-                                                     'key' => "#{service['instance_id']}_#{@name}",
-                                                     'data' => {'host' => service['host'], 'port' => service['port']}
+                                                     'key' => "#{service['instance_id']}_#{@name}"
                                                      )
                                        )
       # instantiate the checks for this service
