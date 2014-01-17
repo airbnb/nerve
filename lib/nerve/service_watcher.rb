@@ -30,9 +30,8 @@ module Nerve
       meth = service['method'] || 'zookeeper'
 
       unless @reporters[meth]
-        if m = service['module']
-          require m
-        end
+        m = service['module'] ? service['module'] : "nerve-reporter-#{meth}"
+        require m
       end
 
       @reporter = @reporters[meth].new(
