@@ -31,10 +31,11 @@ module Nerve
         response = connection.get(@uri)
         code = response.code.to_i
 
-        log.debug "nerve: check #{@name} got response code #{code}"
         if code >= 200 and code < 300
+          log.debug "nerve: check #{@name} got response code #{code} with body \"#{response.body}\""
           return true
         else
+          log.error "nerve: check #{@name} got response code #{code} with body \"#{response.body}\""
           return false
         end
       end
