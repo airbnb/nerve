@@ -47,6 +47,7 @@ The key is the name of the service, and the value is a configuration hash tellin
 The configuration contains the following options:
 
 * `port`: the default port for service checks; nerve will submit this the address `instance_id:port` to Zookeeper
+* `admin_port`: (optional) override the default port for service checks; setting this it will be reported to Zookeeper as `"admin_port": "<value>"`. If you don't want the port to show up in Zookeeper use the override in the check instead
 * `host`: the default host on which to make service checks; you should make this your *public* ip if you want to make sure your service is publically accessible
 * `zk_hosts`: a list of the zookeeper hosts comprising the [ensemble](https://zookeeper.apache.org/doc/r3.1.2/zookeeperAdmin.html#sc_zkMulitServerSetup) that nerve will submit registration to
 * `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created; nerve will create the [ephemeral node](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) that is the registration as a child of this path
@@ -62,7 +63,7 @@ Although the exact parameters passed to each check are different, all take a num
 * `type`: (required) the kind of check; you can see available check types in the `lib/nerve/service_watcher` dir of this repo
 * `name`: (optional) a descriptive, human-readable name for the check; it will be auto-generated based on the other parameters if not specified
 * `host`: (optional) the host on which the check will be performed; defaults to the `host` of the service to which the check belongs
-* `port`: (optional) the port on which the check will be performed; like `host`, it defaults to the `port` of the service
+* `port`: (optional) the port on which the check will be performed; like `host`, it defaults to the `port` of the service (or `admin_port` if set)
 * `timeout`: (optional) maximum time the check can take; defaults to `100ms`
 * `rise`: (optional) how many consecutive checks must pass before the check is considered passing; defaults to 1
 * `fall`: (optional) how many consecutive checks must fail before the check is considered failing; defaults to 1

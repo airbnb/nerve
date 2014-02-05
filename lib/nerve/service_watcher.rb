@@ -17,13 +17,17 @@ module Nerve
 
       @name = service['name']
 
-      # configure the reporter, which we use for talking to zookeeper
+      # configure the reporter, which we use for talking to zookeeper - adding conditional admin-port (removed if nil)
       @reporter = Reporter.new({
           'hosts' => service['zk_hosts'],
           'path' => service['zk_path'],
           'key' => "#{service['instance_id']}_#{@name}",
-          'data' => {'host' => service['host'], 'port' => service['port']},
-        })
+          'data' => {
+              'host' => service['host'],
+              'port' => service['port'],
+              'admin_port' => service['admin_port']
+          }.reject { |k, v| v.nil? },
+      })
 
       # instantiate the checks for this service
       @service_checks = []
@@ -38,7 +42,7 @@ module Nerve
         end
 
         check['host'] ||= service['host']
-        check['port'] ||= service['port']
+        check['port'] ||= service['admin_port'] || service['port']
         check['name'] ||= "#{@name} #{check['type']}-#{check['host']}:#{check['port']}"
         @service_checks << service_check_class.new(check)
       end
