@@ -42,9 +42,12 @@ module Nerve
 
       begin
         sleep
-      rescue
-        log.debug 'nerve: sleep interrupted; exiting'
+      rescue StandardError => e
+        log.error 'nerve: encountered unexpected exception #{e.inspect} in main thread'
+        raise e
+      ensure
         $EXIT = true
+        log.warn 'nerve: reaping all watchers'
         @watchers.each do |name, watcher_thread|
           reap_watcher(name)
         end
