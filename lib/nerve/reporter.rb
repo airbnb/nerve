@@ -12,8 +12,11 @@ module Nerve
 
       @path = opts['hosts'].shuffle.join(',') + opts['path']
       @data = parse_data(opts['data'] || '')
+
       @key = opts['key']
       @key.insert(0,'/') unless @key[0] == '/'
+      @key.insert(-1, '_') unless @key[-1] == '_'
+      @full_key = nil
     end
 
     def start()
@@ -43,15 +46,23 @@ module Nerve
     private
 
     def zk_delete
-      @zk.delete(@key, :ignore => :no_node)
+      if @full_key
+        @zk.delete(@full_key, :ignore => :no_node)
+        @full_key = nil
+      end
+    end
+
+    def zk_create
+      @full_key = @zk.create(@key, :data => @data, :mode => :ephemeral_sequential)
     end
 
     def zk_save
-      log.debug "nerve: writing data #{@data.class} to zk at #{@key} with #{@data.inspect}"
+      return zk_create unless @full_key
+
       begin
-        @zk.set(@key,@data)
-      rescue ZK::Exceptions::NoNode => e
-        @zk.create(@key,:data => @data, :mode => :ephemeral)
+        @zk.set(@full_key, @data)
+      rescue ZK::Exceptions::NoNode
+        zk_create
       end
     end
 
