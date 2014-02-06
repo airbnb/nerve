@@ -1,30 +1,44 @@
 require 'nerve/service_watcher/tcp'
 require 'nerve/service_watcher/http'
 require 'nerve/service_watcher/rabbitmq'
+require_relative './reporter/zookeeper'
 
 module Nerve
   class ServiceWatcher
     include Utils
     include Logging
 
+    @reporters = {
+      'zookeeper' => ZookeeperReporter
+    }
+
+    def self.add_reporter(key, klass)
+      @reporters[key] = klass
+    end
+
     def initialize(service={})
       log.debug "nerve: creating service watcher object"
 
       # check that we have all of the required arguments
-      %w{name instance_id host port zk_hosts zk_path}.each do |required|
+      %w{name instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
 
       @name = service['name']
 
-      # configure the reporter, which we use for talking to zookeeper
-      @reporter = Reporter.new({
-          'hosts' => service['zk_hosts'],
-          'path' => service['zk_path'],
-          'key' => "#{service['instance_id']}_#{@name}",
-          'data' => {'host' => service['host'], 'port' => service['port']},
-        })
+      # default to zk
+      meth = service['method'] || 'zookeeper'
 
+      unless @reporters[meth]
+        m = service['module'] ? service['module'] : "nerve-reporter-#{meth}"
+        require m
+      end
+
+      @reporter = @reporters[meth].new(
+                                       service.merge(
+                                                     'key' => "#{service['instance_id']}_#{@name}"
+                                                     )
+                                       )
       # instantiate the checks for this service
       @service_checks = []
       service['checks'] ||= []

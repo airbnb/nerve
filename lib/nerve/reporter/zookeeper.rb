@@ -1,17 +1,18 @@
 require 'zk'
 
 module Nerve
-  class Reporter
+  class ZookeeperReporter
     include Utils
     include Logging
 
     def initialize(opts)
-      %w{hosts path key}.each do |required|
+
+      %w{zk_hosts zk_path key}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
       end
 
-      @path = opts['hosts'].shuffle.join(',') + opts['path']
-      @data = parse_data(opts['data'] || '')
+      @path = opts['zk_hosts'].shuffle.join(',') + opts['zk_path']
+      @data = parse_data({'host' => service['host'], 'port' => service['port']})
       @key = opts['key']
       @key.insert(0,'/') unless @key[0] == '/'
     end

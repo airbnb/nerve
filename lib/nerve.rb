@@ -6,7 +6,6 @@ require 'nerve/version'
 require 'nerve/utils'
 require 'nerve/log'
 require 'nerve/ring_buffer'
-require 'nerve/reporter'
 require 'nerve/service_watcher'
 
 module Nerve
