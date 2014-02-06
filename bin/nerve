@@ -21,7 +21,8 @@ EOB
   end
 
   options[:instance_id] = ENV['NERVE_INSTANCE_ID']
-  opts.on('-i instanceId','--instance_id instanceId', String, 'Nerve instance id') do |key,value|
+  opts.on('-i instance_id','--instance_id instance_id', String,
+    'reported as `name` to ZK; overrides instance id from config file') do |key,value|
     options[:instance_id] = key
   end
 
@@ -47,7 +48,7 @@ def parseconfig(filename)
   rescue YAML::ParseError => e
     raise "config file #{filename} is not yaml:\n#{e.inspect}"
   end
-  return c
+  return c.to_ruby
 end
 
 config = parseconfig(options[:config])
