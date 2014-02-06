@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     nerve (0.3.0)
-      bunny (= 1.0.0.rc2)
+      bunny (= 1.1.0)
       zk (~> 1.9.2)
 
 GEM
@@ -14,10 +14,10 @@ GEM
     little-plugger (1.1.3)
     logging (1.7.2)
       little-plugger (>= 1.1.3)
-    zk (1.9.2)
+    zk (1.9.3)
       logging (~> 1.7.2)
       zookeeper (~> 1.4.0)
-    zookeeper (1.4.7)
+    zookeeper (1.4.8)
 
 PLATFORMS
   java
