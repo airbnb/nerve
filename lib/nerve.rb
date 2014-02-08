@@ -77,7 +77,7 @@ module Nerve
         $stdout.puts $!.inspect, $@
         $stderr.puts $!.inspect, $@
       ensure
-        EventMachine.stop
+        EventMachine.stop unless EventMachine.nil?
       end
     end
 
