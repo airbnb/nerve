@@ -3,15 +3,13 @@ require 'zk'
 
 class Nerve::Reporter
   class Zookeeper < Base
-    def self.new_from_service(service)
-      self.new({
+    def initalize(service)
+      opts = {
         'hosts' => service['zk_hosts'],
         'path' => service['zk_path'],
         'key' => "/#{service['instance_id']}_",
         'data' => {'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']},
-      })
-    end
-    def initialize(opts)
+      }
       %w{hosts path key}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
       end
