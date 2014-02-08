@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'nerve/reporter/zookeeper'
 
 describe Nerve::Reporter::Zookeeper do
   let(:subject) { {

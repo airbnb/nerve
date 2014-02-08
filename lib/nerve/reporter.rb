@@ -2,9 +2,6 @@ require 'zk'
 
 module Nerve
   class Reporter
-    include Utils
-    include Logging
-
     def self.new_from_service(service)
       type = service['reporter_type'] || 'zookeeper'
       reporter = begin
@@ -15,7 +12,12 @@ module Nerve
       end
       reporter.new_from_service service
     end
-
+  end
+end
+class Nerve::Reporter
+  class Base
+    include Nerve::Utils
+    include Nerve::Logging
     def initialize(opts)
       %w{hosts path key}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
@@ -80,9 +82,6 @@ module Nerve
     def parse_data(data)
       return data if data.class == String
       return data.to_json
-    end
-
-    class Base < Nerve::Reporter
     end
   end
 end

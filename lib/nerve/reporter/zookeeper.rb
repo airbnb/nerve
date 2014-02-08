@@ -1,3 +1,5 @@
+require 'nerve/reporter'
+
 class Nerve::Reporter
   class Zookeeper < Base
     def self.new_from_service(service)
