@@ -10,7 +10,7 @@ module Nerve
       rescue Exception => e
         raise ArgumentError, "specified a reporter_type of #{type}, which could not be found: #{e}"
       end
-      reporter.new_from_service service
+      reporter.new(service)
     end
   end
 end
