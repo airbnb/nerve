@@ -18,12 +18,7 @@ module Nerve
       @name = service['name']
 
       # configure the reporter, which we use for talking to zookeeper
-      @reporter = Reporter.new({
-          'hosts' => service['zk_hosts'],
-          'path' => service['zk_path'],
-          'key' => "/#{service['instance_id']}_",
-          'data' => {'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']},
-        })
+      @reporter = Reporter.new_from_service(service)
 
       # instantiate the checks for this service
       @service_checks = []
