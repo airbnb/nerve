@@ -6,6 +6,13 @@ module Nerve
     include Logging
 
     def self.new_from_service(service)
+      type = service['reporter_type'] || 'zookeeper'
+      reporter = begin
+        require "nerve/reporter/#{type.downcase}"
+        self.const_get(type.downcase.capitalize)
+      rescue Exception => e
+        raise ArgumentError, "specified a reporter_type of #{type}, which could not be found: #{e}"
+      end
       self.new({
         'hosts' => service['zk_hosts'],
         'path' => service['zk_path'],
@@ -80,5 +87,8 @@ module Nerve
       return data.to_json
     end
 
+    class Base < Nerve::Reporter
+    end
   end
 end
+

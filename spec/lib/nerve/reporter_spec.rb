@@ -21,5 +21,9 @@ describe Nerve::Reporter do
   it 'can really construct an instance of Nerve::Reporter' do
     expect(Nerve::Reporter.new_from_service(subject).is_a?(Nerve::Reporter)).to eql(true)
   end
+  it 'throws ArgumentError if you ask for a reporter type which does not exist' do
+    subject['reporter_type'] = 'does_not_exist'
+    expect { Nerve::Reporter.new_from_service(subject) }.to raise_error(ArgumentError)
+  end
 end
 
