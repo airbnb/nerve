@@ -3,7 +3,7 @@ PATH
   specs:
     nerve (0.5.2)
       bunny (= 1.1.0)
-      etcd (~> 0.2.0.alpha)
+      etcd (~> 0.2.3)
       json
       zk (~> 1.9.2)
 
@@ -14,7 +14,7 @@ GEM
     bunny (1.1.0)
       amq-protocol (>= 1.9.2)
     diff-lcs (1.2.5)
-    etcd (0.2.0.alpha)
+    etcd (0.2.3)
       mixlib-log
     json (1.8.1)
     little-plugger (1.1.3)
