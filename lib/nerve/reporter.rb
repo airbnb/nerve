@@ -13,7 +13,7 @@ module Nerve
       rescue Exception => e
         raise ArgumentError, "specified a reporter_type of #{type}, which could not be found: #{e}"
       end
-      self.new({
+      reporter.new({
         'hosts' => service['zk_hosts'],
         'path' => service['zk_path'],
         'key' => "/#{service['instance_id']}_",
