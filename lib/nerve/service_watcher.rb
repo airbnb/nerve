@@ -21,8 +21,8 @@ module Nerve
       @reporter = Reporter.new({
           'hosts' => service['zk_hosts'],
           'path' => service['zk_path'],
-          'key' => "#{service['instance_id']}_#{@name}",
-          'data' => {'host' => service['host'], 'port' => service['port']},
+          'key' => "/#{service['instance_id']}_",
+          'data' => {'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']},
         })
 
       # instantiate the checks for this service
@@ -52,9 +52,7 @@ module Nerve
     def run()
       log.info "nerve: starting service watch #{@name}"
 
-      # begin by reporting down
       @reporter.start()
-      @reporter.report_down
       was_up = false
 
       until $EXIT
