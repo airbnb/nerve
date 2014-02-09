@@ -11,7 +11,7 @@ module Nerve
       log.debug "nerve: creating service watcher object"
 
       # check that we have all of the required arguments
-      %w{name instance_id host port zk_hosts zk_path}.each do |required|
+      %w{name instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
 

@@ -4,22 +4,13 @@ require 'zk'
 class Nerve::Reporter
   class Zookeeper < Base
     def initalize(service)
-      opts = {
-        'hosts' => service['zk_hosts'],
-        'path' => service['zk_path'],
-        'key' => "/#{service['instance_id']}_",
-        'data' => {'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']},
-      }
-      %w{hosts path key}.each do |required|
-        raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
+      %w{zk_hosts zk_path instance_id host port}.each do |required|
+        raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
+      @path = service['zk_hosts'].shuffle.join(',') + opts['zk_path']
+      @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
 
-      @path = opts['hosts'].shuffle.join(',') + opts['path']
-      @data = parse_data(opts['data'] || '')
-
-      @key = opts['key']
-      @key.insert(0,'/') unless @key[0] == '/'
-      @key.insert(-1, '_') unless @key[-1] == '_'
+      @key = "/#{service['instance_id']}_"
       @full_key = nil
     end
 
