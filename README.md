@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/airbnb/nerve.png?branch=master)](https://travis-ci.org/airbnb/nerve)
+
 # Nerve
 
 Nerve is a utility for tracking the status of machines and services.

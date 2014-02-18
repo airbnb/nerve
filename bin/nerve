@@ -20,7 +20,13 @@ EOB
     options[:config] = key
   end
 
-  opts.on( '-h', '--help', 'Display this screen' ) do
+  options[:instance_id] = ENV['NERVE_INSTANCE_ID']
+  opts.on('-i instance_id','--instance_id instance_id', String,
+    'reported as `name` to ZK; overrides instance id from config file') do |key,value|
+    options[:instance_id] = key
+  end
+
+  opts.on('-h', '--help', 'Display this screen') do
     puts opts
     exit
   end
@@ -42,7 +48,7 @@ def parseconfig(filename)
   rescue YAML::ParseError => e
     raise "config file #{filename} is not yaml:\n#{e.inspect}"
   end
-  return c
+  return c.to_ruby
 end
 
 config = parseconfig(options[:config])
@@ -55,6 +61,10 @@ if config.has_key?('service_conf_dir')
   end
   cfiles = Dir.glob(File.join(cdir, '*.{yaml,json}'))
   cfiles.each { |x| config['services'][File.basename(x[/(.*)\.(yaml|json)$/, 1])] = parseconfig(x) }
+end
+
+if options[:instance_id] && !options[:instance_id].empty?
+  config['instance_id'] = options[:instance_id]
 end
 
 # create nerve object
