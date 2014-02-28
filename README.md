@@ -38,7 +38,7 @@ It is usually called `nerve.conf.json`.
 An example config file is available in `example/nerve.conf.json`.
 The config file is composed of two main sections:
 
-* `instance_id`: the name under which your services will be registered in zookeeper
+* `instance_id`: the name nerve will submit when registering services; makes debugging easier
 * `services`: the hash (from service name to config) of the services nerve will be monitoring
 * `service_conf_dir`: path to a directory in which each json file will be interpreted as a service with the basename of the file minus the .json extension
 
@@ -48,12 +48,18 @@ Each service that nerve will be monitoring is specified in the `services` hash.
 The key is the name of the service, and the value is a configuration hash telling nerve how to monitor the service.
 The configuration contains the following options:
 
-* `port`: the default port for service checks; nerve will submit this the address `instance_id:port` to Zookeeper
-* `host`: the default host on which to make service checks; you should make this your *public* ip if you want to make sure your service is publically accessible
-* `zk_hosts`: a list of the zookeeper hosts comprising the [ensemble](https://zookeeper.apache.org/doc/r3.1.2/zookeeperAdmin.html#sc_zkMulitServerSetup) that nerve will submit registration to
-* `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created; nerve will create the [ephemeral node](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) that is the registration as a child of this path
+* `host`: the default host on which to make service checks; you should make this your *public* ip to ensure your service is publically accessible
+* `port`: the default port for service checks; nerve will report the `host`:`port` combo via your chosen reporter
+* `reporter_type`: the mechanism used to report up/down information; depending on the reporter you choose, additional parameters may be required. Defaults to `zookeeper`
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
+
+#### Zookeeper Reporter ####
+
+If you set your `reporter_type` to `"zookeeper"` you should also set these parameters:
+
+* `zk_hosts`: a list of the zookeeper hosts comprising the [ensemble](https://zookeeper.apache.org/doc/r3.1.2/zookeeperAdmin.html#sc_zkMulitServerSetup) that nerve will submit registration to
+* `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created; nerve will create the [ephemeral node](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) that is the registration as a child of this path
 
 ### Checks ###
 
