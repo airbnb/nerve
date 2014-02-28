@@ -1,4 +1,4 @@
-require 'nerve/reporter'
+require 'nerve/reporter/base'
 require 'zk'
 
 class Nerve::Reporter
