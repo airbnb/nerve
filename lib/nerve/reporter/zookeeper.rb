@@ -3,11 +3,11 @@ require 'zk'
 
 class Nerve::Reporter
   class Zookeeper < Base
-    def initalize(service)
+    def initialize(service)
       %w{zk_hosts zk_path instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
-      @path = service['zk_hosts'].shuffle.join(',') + opts['zk_path']
+      @path = service['zk_hosts'].shuffle.join(',') + service['zk_path']
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
 
       @key = "/#{service['instance_id']}_"
