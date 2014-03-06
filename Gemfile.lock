@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nerve (0.5.1)
+    nerve (0.5.2)
       bunny (= 1.1.0)
       zk (~> 1.9.2)
 
