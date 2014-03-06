@@ -21,6 +21,11 @@ class Nerve::Reporter
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
+    def stop()
+      log.info "nerve: closing zk connection at #{@path}"
+      @zk.close
+    end
+
     def report_up()
       zk_save
     end

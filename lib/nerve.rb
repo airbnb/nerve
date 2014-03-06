@@ -30,6 +30,10 @@ module Nerve
       @services = opts['services']
       @watchers = {}
 
+      # Any exceptions in the watcher threads should wake the main thread so
+      # that we can fail fast.
+      Thread.abort_on_exception = true
+
       log.debug 'nerve: completed init'
     end
 
@@ -43,7 +47,7 @@ module Nerve
       begin
         sleep
       rescue StandardError => e
-        log.error 'nerve: encountered unexpected exception #{e.inspect} in main thread'
+        log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
         raise e
       ensure
         $EXIT = true
