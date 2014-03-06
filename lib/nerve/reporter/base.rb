@@ -10,6 +10,9 @@ class Nerve::Reporter
     def start
     end
 
+    def stop
+    end
+
     def report_up
     end
 

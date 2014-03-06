@@ -72,11 +72,12 @@ module Nerve
         sleep @check_interval
       end
     rescue StandardError => e
-      log.error "nerve: error in service watcher #{@name}: #{e}"
+      log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
       raise e
     ensure
       log.info "nerve: ending service watch #{@name}"
       $EXIT = true
+      @reporter.stop
     end
 
     def check?
