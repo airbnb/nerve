@@ -43,6 +43,10 @@ class Nerve::Reporter
       return @zk.ping?
     end
 
+    def close!
+      @zk.close!
+    end
+
     private
 
     def zk_delete
@@ -69,10 +73,6 @@ class Nerve::Reporter
     def parse_data(data)
       return data if data.class == String
       return data.to_json
-    end
-
-    def close!
-      @zk.close!
     end
   end
 end

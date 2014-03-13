@@ -60,6 +60,8 @@ module Nerve
         EventMachine.run do
           Signal.trap("INT")  { EventMachine.stop }
           Signal.trap("TERM") { EventMachine.stop }
+          # Note: this assumes no watcher needs to run more often than every
+          # 0.5 seconds.
           EM.add_periodic_timer(0.5) {
             @service_watchers.each do |name,watcher|
               next if watcher.expires and Time.now.to_i > watcher.expires_at
@@ -77,7 +79,7 @@ module Nerve
         $stdout.puts $!.inspect, $@
         $stderr.puts $!.inspect, $@
       ensure
-        EventMachine.stop unless EventMachine.nil?
+        EventMachine.stop rescue nil
       end
     end
 
