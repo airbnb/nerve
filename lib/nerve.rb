@@ -38,8 +38,6 @@ module Nerve
       @service_watchers={}
       add_services(opts)
 
-      @ephemeral_service_watchers={}
-
       # Any exceptions in the watcher threads should wake the main thread so
       # that we can fail fast.
       Thread.abort_on_exception = true
@@ -141,6 +139,27 @@ module Nerve
         services.add(key)
       end
       services.to_a
+    end
+
+    def log_status
+      status = {}
+      log.info "currently watching #{@service_watchers.size} services"
+      @service_watchers.each do |key,watcher|
+        watcher_status = {}
+        log.info "service watcher key=#{key}, name=#{watcher.name}"
+        watcher_status[key] = watcher.name
+        checks = {}
+        watcher.service_checks.each do |check|
+          log.info "  check=#{check.name}, last_result=#{check.last_result} last_checked_at=#{check.last_checked_at}"
+          checks[check.name] = {
+            'last_result' => check.last_result,
+            'last_checked_at' => check.last_checked_at,
+          }
+        end
+        watcher_status['checks'] = checks
+        status[key] = watcher_status
+      end
+      status
     end
   end
 end

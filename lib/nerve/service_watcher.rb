@@ -5,6 +5,7 @@ require 'nerve/service_watcher/rabbitmq'
 module Nerve
   class ServiceWatcher
     attr_accessor :name, :expires, :expires_at, :sha1
+    attr_reader :service_checks
     include Utils
     include Logging
 

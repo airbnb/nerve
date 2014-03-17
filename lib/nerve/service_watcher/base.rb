@@ -4,6 +4,10 @@ module Nerve
       include Utils
       include Logging
 
+      attr_reader :last_result
+      attr_reader :last_checked_at
+      attr_reader :name
+
       def initialize(opts={})
         @timeout = opts['timeout'] ? opts['timeout'].to_f : 0.1
         @rise    = opts['rise']    ? opts['rise'].to_i    : 1
@@ -12,6 +16,7 @@ module Nerve
 
         @check_buffer = RingBuffer.new([@rise, @fall].max)
         @last_result = nil
+        @last_checked_at = nil
       end
 
       def up?
@@ -41,6 +46,8 @@ module Nerve
           log.info "nerve: service check #{@name} transitions to up after #{@rise} successes" unless @last_result
           @last_result = true
         end
+
+        @last_checked_at = Time.now
 
         # otherwise return the last result
         return @last_result

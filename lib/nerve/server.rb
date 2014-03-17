@@ -26,7 +26,17 @@ module Nerve
           line.chomp!
           begin
             json = JSON.parse(line)
-            @services.merge(@nerve.add_services(json, true))
+            op = json['op']
+            case op
+            when 'service'
+              @services.merge(@nerve.add_services(json['definition'], true))
+            when 'status'
+              send_data JSON.generate(@nerve.log_status)
+            else
+              # NOTE: This exists for backward (legacy) compatibility.  It
+              # should be removed before we merge into master.
+              @services.merge(@nerve.add_services(json, true))
+            end
           rescue JSON::ParserError => e
             # nope!
             log.warn "received malformed data"
