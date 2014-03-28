@@ -50,6 +50,10 @@ class Nerve::Reporter
     private
 
     def zk_delete
+      if @node_subscription
+        @node_subscription.unsubscribe
+      end
+
       if @full_key
         @zk.delete(@full_key, :ignore => :no_node)
         @full_key = nil
@@ -58,6 +62,19 @@ class Nerve::Reporter
 
     def zk_create
       @full_key = @zk.create(@key, :data => @data, :mode => :ephemeral_sequential)
+
+      @node_subscription = @zk.register(@full_key, :only => [:changed, :deleted]) do |event|
+        log.info "ZK node subscription event received for key #{@full_key}: type=#{event.type}, state=#{event.state}"
+        zk_create
+      end
+
+      unless @zk.exists?(@full_key, :watch => true)
+        @node_subscription.unsubscribe
+        log.info "ZK node subscription lost for #{@full_key}"
+        zk_create
+      end
+
+      @full_key
     end
 
     def zk_save
