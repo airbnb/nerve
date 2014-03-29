@@ -14,29 +14,24 @@ class Nerve::Reporter
       @full_key = nil
     end
 
-    def start()
+    def start
       log.info "nerve: waiting to connect to zookeeper at #{@path}"
       @zk = ZK.new(@path)
 
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
-    def stop()
+    def stop
       log.info "nerve: closing zk connection at #{@path}"
       @zk.close
     end
 
-    def report_up()
-      zk_save
+    def report_up
+      zk_create
     end
 
     def report_down
       zk_delete
-    end
-
-    def update_data(new_data='')
-      @data = parse_data(new_data)
-      zk_save
     end
 
     def ping?
@@ -64,27 +59,19 @@ class Nerve::Reporter
       @full_key = @zk.create(@key, :data => @data, :mode => :ephemeral_sequential)
 
       @node_subscription = @zk.register(@full_key, :only => [:changed, :deleted]) do |event|
+        puts "ZK node subscription event received for key #{@full_key}: type=#{event.type}, state=#{event.state}"
         log.info "ZK node subscription event received for key #{@full_key}: type=#{event.type}, state=#{event.state}"
         zk_create
       end
 
       unless @zk.exists?(@full_key, :watch => true)
         @node_subscription.unsubscribe
+        puts "ZK node subscription lost for #{@full_key}"
         log.info "ZK node subscription lost for #{@full_key}"
         zk_create
       end
 
       @full_key
-    end
-
-    def zk_save
-      return zk_create unless @full_key
-
-      begin
-        @zk.set(@full_key, @data)
-      rescue ZK::Exceptions::NoNode
-        zk_create
-      end
     end
 
     def parse_data(data)
