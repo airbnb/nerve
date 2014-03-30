@@ -18,6 +18,15 @@ class Nerve::Reporter
       log.info "nerve: waiting to connect to zookeeper at #{@path}"
       @zk = ZK.new(@path)
 
+      @zk.on_expired_session do
+        log.info "nerve: zookeeper session expired at #{@path}"
+        start
+
+        if @full_key
+          zk_create
+        end
+      end
+
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
