@@ -21,6 +21,8 @@ module Nerve
         @open_timeout = opts['open_timeout'] || 0.2
         @ssl_timeout  = opts['ssl_timeout']  || 0.2
 
+        @expect      = opts['expect']
+
         @name        = "http-#{@host}:#{@port}#{@uri}"
       end
 
@@ -30,12 +32,13 @@ module Nerve
         connection = get_connection
         response = connection.get(@uri)
         code = response.code.to_i
+        body = response.body
 
-        if code >= 200 and code < 300
-          log.debug "nerve: check #{@name} got response code #{code} with body \"#{response.body}\""
+        if code >= 200 and code < 300 and (@expect == nil || body.include?(@expect))
+          log.debug "nerve: check #{@name} got response code #{code} with body \"#{body}\""
           return true
         else
-          log.error "nerve: check #{@name} got response code #{code} with body \"#{response.body}\""
+          log.error "nerve: check #{@name} got response code #{code} with body \"#{body}\""
           return false
         end
       end
