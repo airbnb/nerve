@@ -12,40 +12,55 @@ class Nerve::Reporter
 
       @key = "/#{service['instance_id']}_"
       @full_key = nil
+      @zk = nil
     end
 
-    def start()
+    def start
       log.info "nerve: waiting to connect to zookeeper at #{@path}"
+      close!
       @zk = ZK.new(@path)
+
+      @zk.on_expired_session do
+        log.info "nerve: zookeeper session expired at #{@path}"
+        start
+
+        if @full_key
+          zk_create
+        end
+      end
 
       log.info "nerve: successfully created zk connection to #{@path}"
     end
 
-    def stop()
+    def stop
       log.info "nerve: closing zk connection at #{@path}"
-      @zk.close
+      close!
     end
 
-    def report_up()
-      zk_save
+    def report_up
+      zk_create
     end
 
     def report_down
       zk_delete
     end
 
-    def update_data(new_data='')
-      @data = parse_data(new_data)
-      zk_save
-    end
-
     def ping?
       return @zk.ping?
+    end
+
+    def close!
+      @zk.close! unless @zk.nil?
+      @zk = nil
     end
 
     private
 
     def zk_delete
+      if @node_subscription
+        @node_subscription.unsubscribe
+      end
+
       if @full_key
         @zk.delete(@full_key, :ignore => :no_node)
         @full_key = nil
@@ -54,16 +69,21 @@ class Nerve::Reporter
 
     def zk_create
       @full_key = @zk.create(@key, :data => @data, :mode => :ephemeral_sequential)
-    end
 
-    def zk_save
-      return zk_create unless @full_key
-
-      begin
-        @zk.set(@full_key, @data)
-      rescue ZK::Exceptions::NoNode
+      @node_subscription = @zk.register(@full_key, :only => [:changed, :deleted]) do |event|
+        puts "ZK node subscription event received for key #{@full_key}: type=#{event.type}, state=#{event.state}"
+        log.info "ZK node subscription event received for key #{@full_key}: type=#{event.type}, state=#{event.state}"
         zk_create
       end
+
+      unless @zk.exists?(@full_key, :watch => true)
+        @node_subscription.unsubscribe
+        puts "ZK node subscription lost for #{@full_key}"
+        log.info "ZK node subscription lost for #{@full_key}"
+        zk_create
+      end
+
+      @full_key
     end
 
     def parse_data(data)

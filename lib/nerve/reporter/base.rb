@@ -22,6 +22,9 @@ class Nerve::Reporter
     def update_data(new_data='')
     end
 
+    def close!
+    end
+
     def ping?
     end
   end

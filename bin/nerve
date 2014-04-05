@@ -33,7 +33,6 @@ EOB
 
 end
 
-
 # parse command line arguments
 optparse.parse!
 

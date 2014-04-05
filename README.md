@@ -41,6 +41,8 @@ The config file is composed of two main sections:
 * `instance_id`: the name nerve will submit when registering services; makes debugging easier
 * `services`: the hash (from service name to config) of the services nerve will be monitoring
 * `service_conf_dir`: path to a directory in which each json file will be interpreted as a service with the basename of the file minus the .json extension
+* `listen_port`: TCP port on which Nerve will listen for ephemeral services
+* `ephemeral_service_expiry`: number of seconds after which ephemeral services expire if they have not sent a heartbeat
 
 ### Services Config ###
 
@@ -74,6 +76,95 @@ Although the exact parameters passed to each check are different, all take a num
 * `timeout`: (optional) maximum time the check can take; defaults to `100ms`
 * `rise`: (optional) how many consecutive checks must pass before the check is considered passing; defaults to 1
 * `fall`: (optional) how many consecutive checks must fail before the check is considered failing; defaults to 1
+
+### Runtime configuration (ephemeral services) ###
+
+It's possible to announce services to Nerve at runtime.  Nerve, by default, binds to 127.0.0.1 and listens for TCP connections on port 1025 (you can change the port with the `listen_port` configuration option).  You can write a TCP client which connects to this port and sends JSON within the minimum heartbeat interval (60s, configured with `ephemeral_service_expiry`).  For example, you may run a service which sends the JSON service definition every 45 seconds.  Here's a sample Ruby announcer:
+
+
+```ruby
+module Nerve
+  class Announcer
+    attr_accessor :port
+    attr_accessor :name
+    attr_accessor :check_interval
+    attr_accessor :timeout
+    attr_accessor :rise
+    attr_accessor :fall
+    attr_accessor :type
+    attr_accessor :uri
+
+    def initialize
+      @check_interval = 30
+      @timeout = 300
+      @rise = 1
+      @fall = 3
+      @type = "tcp"
+      @uri = "/healthy" # only if @type is 'http'
+    end
+
+    def run
+      if @name.nil?
+        raise "Name must be defined"
+      end
+      if @port.nil?
+        raise "Port must be defined"
+      end
+      log = Logger.new(STDERR)
+      log.level = Logger::INFO
+
+      @nerve_host = 'localhost'
+      @nerve_port = 1025
+
+      @zk_prod_servers = ['zk.host.name:2181']
+
+      # Announce this service to nerve
+      json = {
+        "services" => {
+          @name => {
+            "port"            => @port.to_i,
+            "check_interval"  => @check_interval,
+            "checks" => [{
+              "type"          => @type,
+              "uri"           => @uri,
+              "timeout"       => @timeout,
+              "rise"          => @rise,
+              "fall"          => @fall,
+            }],
+            "zk_hosts"        => @zk_prod_servers,
+            "zk_path"         => "/production/services/#{name}/services",
+            "host"            => Resolv.getaddress(Socket.gethostbyname(Socket.gethostname).first),
+          },
+        },
+      }
+      json = JSON.generate(json) + "\n"
+
+      Thread.new(json) do |json|
+        log.info "Announcing to Nerve: service '#{@name}' on local port #{@port}"
+        # loopy loop
+        loop do
+          begin
+            TCPSocket.open(@nerve_host, @nerve_port) do |s|
+              s.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+              loop do
+                s.write json
+                s.flush
+                sleep 45
+              end
+            end
+          rescue => e
+            log.error $!.inspect
+            log.error $@
+          end
+          sleep 45
+        end
+      end
+    end
+  end
+end
+```
+
+
 
 ## Contributing
 
