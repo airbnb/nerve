@@ -12,10 +12,12 @@ class Nerve::Reporter
 
       @key = "/#{service['instance_id']}_"
       @full_key = nil
+      @zk = nil
     end
 
     def start
       log.info "nerve: waiting to connect to zookeeper at #{@path}"
+      close!
       @zk = ZK.new(@path)
 
       @zk.on_expired_session do
@@ -32,7 +34,7 @@ class Nerve::Reporter
 
     def stop
       log.info "nerve: closing zk connection at #{@path}"
-      @zk.close
+      close!
     end
 
     def report_up
@@ -48,7 +50,8 @@ class Nerve::Reporter
     end
 
     def close!
-      @zk.close!
+      @zk.close! unless @zk.nil?
+      @zk = nil
     end
 
     private
