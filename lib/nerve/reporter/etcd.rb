@@ -39,9 +39,10 @@ class Nerve::Reporter
     end
 
     def ping?
-      return @etcd.leader
       if @full_key
         etcd_save
+      else
+        @etcd.leader
       end
     end
 
