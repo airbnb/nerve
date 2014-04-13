@@ -25,3 +25,18 @@ describe Nerve::Reporter do
   end
 end
 
+class Nerve::Reporter::Test < Nerve::Reporter::Base
+end
+
+describe Nerve::Reporter::Test do
+  let(:subject) {Nerve::Reporter::Test.new({}) }
+  it 'has parse data method that passes strings' do
+    expect(subject.send(:parse_data, 'foobar')).to eql('foobar')
+  end
+  it 'jsonifies anything that is not a string' do
+    thing_to_parse = double()
+    expect(thing_to_parse).to receive(:to_json).and_return('{"some":"json"}')
+    expect(subject.send(:parse_data, thing_to_parse)).to eql('{"some":"json"}')
+  end
+end
+
