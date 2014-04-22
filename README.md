@@ -61,6 +61,16 @@ If you set your `reporter_type` to `"zookeeper"` you should also set these param
 * `zk_hosts`: a list of the zookeeper hosts comprising the [ensemble](https://zookeeper.apache.org/doc/r3.1.2/zookeeperAdmin.html#sc_zkMulitServerSetup) that nerve will submit registration to
 * `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created; nerve will create the [ephemeral node](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) that is the registration as a child of this path
 
+#### Etcd Reporter ####
+
+Note: Etcd support is currently experimental! 
+
+If you set your `reporter_type` to `"etcd"` you should also set these parameters:
+
+* `etcd_host`: etcd host that nerve will submit registration to
+* `etcd_port`: port to connect to etcd.
+* `etcd_path`: the path where the registration will be created; nerve will create a node with a 30s ttl that is the registration as a child of this path, and then update it every few seconds
+
 ### Checks ###
 
 The core of nerve is a set of service checks.

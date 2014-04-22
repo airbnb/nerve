@@ -65,11 +65,6 @@ class Nerve::Reporter
         zk_create
       end
     end
-
-    def parse_data(data)
-      return data if data.class == String
-      return data.to_json
-    end
   end
 end
 
