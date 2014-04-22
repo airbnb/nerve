@@ -1,4 +1,4 @@
-require 'nerve/reporter'
+require 'nerve/reporter/base'
 require 'etcd'
 
 class Nerve::Reporter
