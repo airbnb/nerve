@@ -1,3 +1,5 @@
+require 'nerve/ring_buffer'
+
 module Nerve
   module ServiceCheck
     class BaseServiceCheck

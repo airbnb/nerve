@@ -1,3 +1,5 @@
+require 'nerve/utils'
+require 'nerve/log'
 
 module Nerve
   class Reporter
