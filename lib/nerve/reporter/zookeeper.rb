@@ -21,6 +21,9 @@ class Nerve::Reporter
       @zk = ZK.new(@path)
 
       @zk.on_expired_session do
+        # Check if we already closed the connection.
+        return if @zk.nil?
+
         log.info "nerve: zookeeper session expired at #{@path}"
         start
 
