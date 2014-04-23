@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nerve (0.5.2)
+    nerve (0.5.3)
       bunny (= 1.1.0)
       etcd (~> 0.2.3)
       json
@@ -18,9 +18,11 @@ GEM
       mixlib-log
     json (1.8.1)
     little-plugger (1.1.3)
-    logging (1.7.2)
+    logging (1.8.2)
       little-plugger (>= 1.1.3)
+      multi_json (>= 1.8.4)
     mixlib-log (1.6.0)
+    multi_json (1.9.2)
     rake (10.1.1)
     rspec (2.14.1)
       rspec-core (~> 2.14.0)
@@ -30,8 +32,8 @@ GEM
     rspec-expectations (2.14.5)
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-mocks (2.14.5)
-    zk (1.9.3)
-      logging (~> 1.7.2)
+    zk (1.9.4)
+      logging (~> 1.8.2)
       zookeeper (~> 1.4.0)
     zookeeper (1.4.8)
 
