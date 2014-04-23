@@ -1,5 +1,6 @@
 require 'nerve/utils'
 require 'nerve/log'
+require 'nerve/reporter/base'
 
 module Nerve
   class Reporter
