@@ -72,8 +72,16 @@ module Nerve
           was_up = is_up
         end
 
-        # wait to run more checks
-        sleep @check_interval
+        # wait to run more checks but make sure to exit if $EXIT
+        # this supports both Floats and Ints
+        nap_time = @check_interval
+        while nap_time > 0
+          break if $EXIT
+          # don't sleep for more than one second
+          sleep nap_time > 1 ? 1 : nap_time
+          nap_time -= 1
+        end
+
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
