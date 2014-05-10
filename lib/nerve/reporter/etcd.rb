@@ -54,6 +54,8 @@ class Nerve::Reporter
         @etcd.delete(@full_key)
       rescue ::Etcd::KeyNotFound
       rescue Errno::ECONNREFUSED
+      ensure
+        @full_key = nil
       end
     end
 
