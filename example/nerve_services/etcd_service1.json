@@ -2,8 +2,7 @@
   "host": "1.2.3.4",
   "port": 3000,
   "reporter_type": "etcd",
-  "etcd_host": "localhost",
-  "etcd_port": 4001,
+  "etcd_hosts": ["localhost"],
   "etcd_path": "/nerve/services/your_http_service/services",
   "check_interval": 2,
   "checks": [
