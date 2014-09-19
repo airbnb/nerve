@@ -21,6 +21,8 @@ module Nerve
         @open_timeout = opts['open_timeout'] || 0.2
         @ssl_timeout  = opts['ssl_timeout']  || 0.2
 
+        @headers     = opts['headers'] || {}
+
         @expect      = opts['expect']
 
         @name        = "http-#{@host}:#{@port}#{@uri}"
@@ -30,7 +32,7 @@ module Nerve
         log.debug "running health check #{@name}"
 
         connection = get_connection
-        response = connection.get(@uri)
+        response = connection.get(@uri, @headers)
         code = response.code.to_i
         body = response.body
 
