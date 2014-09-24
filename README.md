@@ -15,7 +15,7 @@ Nerve simplifies underlying services, enables code reuse, and allows us to creat
 It does so by factoring out the boilerplate into it's own application, which independenly handles monitoring and reporting.
 
 Beyond those benefits, nerve also acts as a general watchdog on systems.
-The information it reports can be used to take action from a certralized automation center: action like scaling distributed systems up or down or alerting ops or engineering about downtime.
+The information it reports can be used to take action from a centralized automation center: action like scaling distributed systems up or down or alerting ops or engineering about downtime.
 
 ## Installation ##
 
