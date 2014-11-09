@@ -84,6 +84,7 @@ Although the exact parameters passed to each check are different, all take a num
 * `timeout`: (optional) maximum time the check can take; defaults to `100ms`
 * `rise`: (optional) how many consecutive checks must pass before the check is considered passing; defaults to 1
 * `fall`: (optional) how many consecutive checks must fail before the check is considered failing; defaults to 1
+* `http_port`: (optional) perform http health check on a port different from the one used for connection; defaults to the value of `port`
 
 ## Contributing
 
