@@ -20,12 +20,12 @@ module Nerve
         @read_timeout = opts['read_timeout'] || @timeout
         @open_timeout = opts['open_timeout'] || 0.2
         @ssl_timeout  = opts['ssl_timeout']  || 0.2
-
+        @http_port  = opts['http_port']  || @port
         @headers     = opts['headers'] || {}
 
         @expect      = opts['expect']
 
-        @name        = "http-#{@host}:#{@port}#{@uri}"
+        @name        = "http-#{@host}:#{@http_port}#{@uri}"
       end
 
       def check
@@ -47,7 +47,7 @@ module Nerve
 
       private
       def get_connection
-        con = Net::HTTP.new(@host, @port)
+        con = Net::HTTP.new(@host, @http_port)
         con.read_timeout = @read_timeout
         con.open_timeout = @open_timeout
 
