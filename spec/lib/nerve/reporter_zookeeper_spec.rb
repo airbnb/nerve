@@ -13,5 +13,19 @@ describe Nerve::Reporter::Zookeeper do
   it 'actually constructs an instance' do
     expect(Nerve::Reporter::Zookeeper.new(subject).is_a?(Nerve::Reporter::Zookeeper)).to eql(true)
   end
+
+  it 'deregisters service on exit' do
+    zk = double("zk")
+    allow(zk).to receive(:close)
+    expect(zk).to receive(:create) { "full_path" }
+    expect(zk).to receive(:delete).with("full_path", anything())
+
+    ZK.stub(:new) { zk }
+
+    reporter = Nerve::Reporter::Zookeeper.new(subject)
+    reporter.start
+    reporter.report_up
+    reporter.stop
+  end
 end
 
