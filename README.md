@@ -85,6 +85,14 @@ Although the exact parameters passed to each check are different, all take a num
 * `rise`: (optional) how many consecutive checks must pass before the check is considered passing; defaults to 1
 * `fall`: (optional) how many consecutive checks must fail before the check is considered failing; defaults to 1
 
+#### Custom External Checks ####
+
+If you would like to run a custom check but don't feel like trying to get it merged into this project, there is a mechanism for including external checks thanks to @bakins (airbnb/nerve#36).
+Build your custom check as a separate gem and make sure to `bundle install` it on your system.
+
+Ideally, you should name your gem `"nerve-watcher-#{type}"`, as that is what nerve will `require` on boot.
+However, if you have a custom name for your gem, you can specify that in the `module` argument to the check.
+
 ## Contributing
 
 1. Fork it
