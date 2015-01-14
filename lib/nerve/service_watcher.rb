@@ -26,6 +26,10 @@ module Nerve
       service['checks'].each do |check|
         check['type'] ||= "undefined"
         begin
+          unless ServiceCheck::CHECKS[check['type']]
+            m = check['module'] ? check['module'] : "nerve-watcher-#{check['type']}"
+            require m
+          end
           service_check_class = ServiceCheck::CHECKS[check['type']]
         rescue
           raise ArgumentError,
