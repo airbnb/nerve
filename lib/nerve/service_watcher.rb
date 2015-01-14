@@ -73,15 +73,14 @@ module Nerve
         end
 
         # wait to run more checks but make sure to exit if $EXIT
-        # this supports both Floats and Ints
+        # we avoid sleeping for the entire check interval at once
+        # so that nerve can exit promptly if required
         nap_time = @check_interval
         while nap_time > 0
           break if $EXIT
-          # don't sleep for more than one second
-          sleep nap_time > 1 ? 1 : nap_time
+          sleep [nap_time, 1].min
           nap_time -= 1
         end
-
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
