@@ -31,15 +31,18 @@ module Nerve
         # generate a nice readable name for each check
         check['name'] ||= "#{@name} #{check['type']}-#{check['host']}:#{check['port']}"
 
-        # instantiate the check
+        # make sure a type is set
         check['type'] ||= "undefined"
-        begin
-          unless ServiceCheck::CHECKS[check['type']]
-            m = check['module'] ? check['module'] : "nerve-watcher-#{check['type']}"
-            require m
-          end
-          service_check_class = ServiceCheck::CHECKS[check['type']]
-        rescue
+
+        # require a 3rd-party module if necessary for external checkers
+        unless ServiceCheck::CHECKS[check['type']]
+          m = check['module'] ? check['module'] : "nerve-watcher-#{check['type']}"
+          require m
+        end
+
+        # instantiate the check object
+        service_check_class = ServiceCheck::CHECKS[check['type']]
+        if service_check_class.nil?
           raise ArgumentError,
             "invalid service check type #{check['type']}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
         end
