@@ -24,6 +24,14 @@ module Nerve
       @service_checks = []
       service['checks'] ||= []
       service['checks'].each do |check|
+        # checks inherit attributes from the service overall
+        check['host'] ||= service['host']
+        check['port'] ||= service['port']
+
+        # generate a nice readable name for each check
+        check['name'] ||= "#{@name} #{check['type']}-#{check['host']}:#{check['port']}"
+
+        # instantiate the check
         check['type'] ||= "undefined"
         begin
           unless ServiceCheck::CHECKS[check['type']]
@@ -36,14 +44,15 @@ module Nerve
             "invalid service check type #{check['type']}; valid types: #{ServiceCheck::CHECKS.keys.join(',')}"
         end
 
-        check['host'] ||= service['host']
-        check['port'] ||= service['port']
-        check['name'] ||= "#{@name} #{check['type']}-#{check['host']}:#{check['port']}"
+        # save the check object
         @service_checks << service_check_class.new(check)
       end
 
       # how often do we initiate service checks?
       @check_interval = service['check_interval'] || 0.5
+
+      # assume the services start as down
+      @was_up = false
 
       log.debug "nerve: created service watcher for #{@name} with #{@service_checks.size} checks"
     end
@@ -52,35 +61,9 @@ module Nerve
       log.info "nerve: starting service watch #{@name}"
 
       @reporter.start()
-      was_up = false
 
       until $EXIT
-        @reporter.ping?
-
-        # what is the status of the service?
-        is_up = check?
-        log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
-
-        if is_up != was_up
-          if is_up
-            @reporter.report_up
-            log.info "nerve: service #{@name} is now up"
-          else
-            @reporter.report_down
-            log.warn "nerve: service #{@name} is now down"
-          end
-          was_up = is_up
-        end
-
-        # wait to run more checks but make sure to exit if $EXIT
-        # we avoid sleeping for the entire check interval at once
-        # so that nerve can exit promptly if required
-        nap_time = @check_interval
-        while nap_time > 0
-          break if $EXIT
-          sleep [nap_time, 1].min
-          nap_time -= 1
-        end
+        check_and_report
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
@@ -89,6 +72,35 @@ module Nerve
       log.info "nerve: ending service watch #{@name}"
       $EXIT = true
       @reporter.stop
+    end
+
+    def check_and_report
+      @reporter.ping?
+
+      # what is the status of the service?
+      is_up = check?
+      log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
+
+      if is_up != @was_up
+        if is_up
+          @reporter.report_up
+          log.info "nerve: service #{@name} is now up"
+        else
+          @reporter.report_down
+          log.warn "nerve: service #{@name} is now down"
+        end
+        @was_up = is_up
+      end
+
+      # wait to run more checks but make sure to exit if $EXIT
+      # we avoid sleeping for the entire check interval at once
+      # so that nerve can exit promptly if required
+      nap_time = @check_interval
+      while nap_time > 0
+        break if $EXIT
+        sleep [nap_time, 1].min
+        nap_time -= 1
+      end
     end
 
     def check?
