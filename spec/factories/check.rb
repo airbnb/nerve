@@ -1,6 +1,6 @@
 FactoryGirl.define do
   factory :check, :class => Hash do
-    type       'tcp'
+    type       'base'
     timeout    0.2
     rise       3
     fall       2

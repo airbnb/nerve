@@ -4,7 +4,9 @@ FactoryGirl.define do
     instance_id        'public_hostname.example.com'
     host               'localhost'
     port               3000
+    reporter_type      'base'
     checks             { create_list(:check, checks_count) }
+    check_interval     nil
 
     trait :zookeeper do
       reporter_type    'zookeeper'
