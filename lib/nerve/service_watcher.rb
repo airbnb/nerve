@@ -54,8 +54,8 @@ module Nerve
       # how often do we initiate service checks?
       @check_interval = service['check_interval'] || 0.5
 
-      # assume the services start as down
-      @was_up = false
+      # force an initial report on startup
+      @was_up = nil
 
       log.debug "nerve: created service watcher for #{@name} with #{@service_checks.size} checks"
     end
@@ -67,6 +67,16 @@ module Nerve
 
       until $EXIT
         check_and_report
+
+        # wait to run more checks but make sure to exit if $EXIT
+        # we avoid sleeping for the entire check interval at once
+        # so that nerve can exit promptly if required
+        nap_time = @check_interval
+        while nap_time > 0
+          break if $EXIT
+          sleep [nap_time, 1].min
+          nap_time -= 1
+        end
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
@@ -93,16 +103,6 @@ module Nerve
           log.warn "nerve: service #{@name} is now down"
         end
         @was_up = is_up
-      end
-
-      # wait to run more checks but make sure to exit if $EXIT
-      # we avoid sleeping for the entire check interval at once
-      # so that nerve can exit promptly if required
-      nap_time = @check_interval
-      while nap_time > 0
-        break if $EXIT
-        sleep [nap_time, 1].min
-        nap_time -= 1
       end
     end
 
