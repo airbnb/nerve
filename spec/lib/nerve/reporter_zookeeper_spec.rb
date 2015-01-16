@@ -20,7 +20,7 @@ describe Nerve::Reporter::Zookeeper do
     expect(zk).to receive(:create) { "full_path" }
     expect(zk).to receive(:delete).with("full_path", anything())
 
-    ZK.stub(:new) { zk }
+    allow(ZK).to receive(:new).and_return(zk)
 
     reporter = Nerve::Reporter::Zookeeper.new(subject)
     reporter.start
