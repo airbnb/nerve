@@ -4,11 +4,10 @@ require 'etcd'
 class Nerve::Reporter
   class Etcd < Base
     def initialize(service)
-      %w{etcd_host instance_id host port}.each do |required|
+      %w{etcd_hosts instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
-      @host = service['etcd_host']
-      @port = service['etcd_port'] || 4003
+      @hosts = service['etcd_hosts'].shuffle
       path = service['etcd_path'] || '/'
       @key = path.split('/').push(service['instance_id']).join('/')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
@@ -16,7 +15,19 @@ class Nerve::Reporter
 
     def start()
       log.info "nerve: waiting to connect to etcd at #{@path}"
-      @etcd = ::Etcd.client(:host => @host, :port => @port)
+      @hosts.each do |h|
+        host, port = h.split(':')
+        port = port || 4003
+        @etcd = ::Etcd.client(:host => host, :port => port)
+
+        connected =
+          begin
+            @etcd.leader
+          rescue
+            false
+          end
+        break if connected
+      end
       log.info "nerve: successfully created etcd connection to #{@key}"
     end
 

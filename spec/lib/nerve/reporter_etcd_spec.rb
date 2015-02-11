@@ -3,8 +3,7 @@ require 'nerve/reporter/etcd'
 
 describe Nerve::Reporter::Etcd do
   let(:subject) { {
-      'etcd_host' => 'etcdhost1',
-      'etcd_port' => 4001,
+      'etcd_hosts' => ['etcdhost1:4001'],
       'etcd_path' => '/path',
       'instance_id' => 'instance_id',
       'host' => 'host',
