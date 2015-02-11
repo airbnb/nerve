@@ -24,7 +24,7 @@ class Nerve::Reporter
     def stop()
       log.info "nerve: closing zk connection at #{@path}"
       report_down
-      @zk.close
+      @zk.close!
     end
 
     def report_up()
