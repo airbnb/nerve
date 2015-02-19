@@ -8,9 +8,13 @@ Gem::Specification.new do |gem|
   gem.version       = Nerve::VERSION
   gem.authors       = ["Martin Rhoads", "Igor Serebryany", "Pierre Carrier"]
   gem.email         = ["martin.rhoads@airbnb.com", "igor.serebryany@airbnb.com"]
-  gem.description   = %q{description}
-  gem.summary       = %q{summary}
-  gem.homepage      = ""
+  gem.description   = "Nerve is a service registration daemon. It performs health "\
+                      "checks on your service and then publishes success or failure "\
+                      "into one of several registries (currently, zookeeper or etcd). "\
+                      "Nerve is half or SmartStack, and is designed to be operated "\
+                      "along with Synapse to provide a full service discovery framework"
+  gem.summary       = %q{A service registration daemon}
+  gem.homepage      = "https://github.com/airbnb/nerve"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
