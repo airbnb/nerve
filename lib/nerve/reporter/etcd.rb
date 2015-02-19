@@ -10,14 +10,17 @@ class Nerve::Reporter
       @host = service['etcd_host']
       @port = service['etcd_port'] || 4003
       path = service['etcd_path'] || '/'
-      @key = path.split('/').push(service['instance_id']).join('/')
+      @path = path.split('/').push(service['instance_id']).join('/')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
+      @key = nil
+      @ttl = (service['check_interval'] || 0.5) * 5
+      @ttl = @ttl.ceil
     end
 
     def start()
-      log.info "nerve: waiting to connect to etcd at #{@path}"
+      log.info "nerve: connecting to etcd at #{@host}:#{@port}"
       @etcd = ::Etcd.client(:host => @host, :port => @port)
-      log.info "nerve: successfully created etcd connection to #{@key}"
+      log.info "nerve: successfully created etcd connection to #{@host}:#{@port}"
     end
 
     def stop()
@@ -34,14 +37,20 @@ class Nerve::Reporter
     end
 
     def update_data(new_data='')
+      # nothing in nerve calls this, but implement it like the zookeeper
+      # reporter just for fun.
       @data = parse_data(new_data)
       etcd_save
     end
 
     def ping?
-      if @full_key
+      # we get a ping every check_interval.
+      if @key
+        # we have made a key: save it to prevent the TTL from expiring.
         etcd_save
       else
+        # we haven't created a key, so just frob the etcd API to assure that
+        # it's alive.
         @etcd.leader
       end
     end
@@ -49,26 +58,24 @@ class Nerve::Reporter
     private
 
     def etcd_delete
-      return unless @etcd and @full_key
+      return unless @etcd and @key
       begin
-        @etcd.delete(@full_key)
-      rescue ::Etcd::KeyNotFound
+        @etcd.delete(@key)
+      rescue ::Etcd::NotFile
       rescue Errno::ECONNREFUSED
       end
     end
 
     def etcd_create
-      @full_key = @etcd.create_in_order(@key, :value => @data).key
-      log.info "Created etcd node path #{@full_key}"
+      # we use create_in_order to create a unique key under our path,
+      # permitting multiple registrations from the same instance_id.
+      @key = @etcd.create_in_order(@path, :value => @data, :ttl => @ttl).key
+      log.info "registered etcd key #{@key} with value #{@data}, TTL #{@ttl}"
     end
 
     def etcd_save
-      return etcd_create unless @full_key
-      begin
-        @etcd.set(@key, :value => @data, ttl => 30)
-      rescue ::Etcd::KeyNotFound
-        etcd_create
-      end
+      return etcd_create unless @key
+      @etcd.set(@key, :value => @data, :ttl => @ttl)
     end
   end
 end
