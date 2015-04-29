@@ -1,24 +1,41 @@
 require 'nerve/reporter/base'
+require 'thread'
 require 'zk'
+
 
 class Nerve::Reporter
   class Zookeeper < Base
+    @@zk_pool = {}
+    @@zk_pool_lock = Mutex.new
+
     def initialize(service)
       %w{zk_hosts zk_path instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
-      @path = service['zk_hosts'].shuffle.join(',') + service['zk_path']
+      @path = service['zk_hosts'].shuffle.join(',')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
 
-      @key = "/#{service['instance_id']}_"
+      @key = service['zk_path'] + "/#{service['instance_id']}_"
       @full_key = nil
     end
 
     def start()
       log.info "nerve: waiting to connect to zookeeper at #{@path}"
-      @zk = ZK.new(@path)
-
-      log.info "nerve: successfully created zk connection to #{@path}"
+      # Ensure that all Zookeeper reporters re-use a single zookeeper
+      # connection to any given connection string. Note that you will
+      # end up with a number of connections equal to the number of hosts in
+      # the connection string because the randomization in initialize
+      @@zk_pool_lock.synchronize {
+        unless @@zk_pool.has_key?(@path)
+          log.info "nerve: creating pooled connection at #{@path}"
+          @@zk_pool[@path] = ZK.new(@path)
+          log.info "nerve: successfully created zk connection to #{@path}"
+        else
+          log.info "nerve: re-using existing zookeeper connection at #{@path}"
+        end
+        @zk = @@zk_pool[@path]
+        log.info "nerve: retrieved zk connection to #{@path}"
+      }
     end
 
     def stop()
