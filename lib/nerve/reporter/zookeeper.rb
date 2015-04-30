@@ -6,13 +6,15 @@ require 'zk'
 class Nerve::Reporter
   class Zookeeper < Base
     @@zk_pool = {}
+    @@zk_pool_count = {}
     @@zk_pool_lock = Mutex.new
 
     def initialize(service)
       %w{zk_hosts zk_path instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
-      @path = service['zk_hosts'].shuffle.join(',')
+      # Since we pool we get one connection per zookeeper cluster
+      @path = service['zk_hosts'].sort.join(',')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
 
       @key = service['zk_path'] + "/#{service['instance_id']}_"
@@ -20,18 +22,18 @@ class Nerve::Reporter
     end
 
     def start()
-      log.info "nerve: waiting to connect to zookeeper at #{@path}"
+      log.info "nerve: waiting to connect to zookeeper to #{@path}"
       # Ensure that all Zookeeper reporters re-use a single zookeeper
-      # connection to any given connection string. Note that you will
-      # end up with a number of connections equal to the number of hosts in
-      # the connection string because the randomization in initialize
+      # connection to any given set of zk hosts.
       @@zk_pool_lock.synchronize {
         unless @@zk_pool.has_key?(@path)
-          log.info "nerve: creating pooled connection at #{@path}"
+          log.info "nerve: creating pooled connection to #{@path}"
           @@zk_pool[@path] = ZK.new(@path)
+          @@zk_pool_count[@path] = 1
           log.info "nerve: successfully created zk connection to #{@path}"
         else
-          log.info "nerve: re-using existing zookeeper connection at #{@path}"
+          @@zk_pool_count[@path] += 1
+          log.info "nerve: re-using existing zookeeper connection to #{@path}"
         end
         @zk = @@zk_pool[@path]
         log.info "nerve: retrieved zk connection to #{@path}"
@@ -39,9 +41,16 @@ class Nerve::Reporter
     end
 
     def stop()
-      log.info "nerve: closing zk connection at #{@path}"
+      log.info "nerve: removing zk node at #{@full_key}" if @full_key
       report_down
-      @zk.close!
+      @@zk_pool_lock.synchronize {
+        @@zk_pool_count[@path] -= 1
+        # Last thread to use the connection closes it
+        if @@zk_pool_count[@path] == 0
+          log.info "nerve: closing zk connection to #{@path}"
+          @zk.close!
+        end
+      }
     end
 
     def report_up()
