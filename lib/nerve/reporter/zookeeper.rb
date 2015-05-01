@@ -17,7 +17,8 @@ class Nerve::Reporter
       @path = service['zk_hosts'].sort.join(',')
       @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
 
-      @key = service['zk_path'] + "/#{service['instance_id']}_"
+      @zk_path = service['zk_path']
+      @key = @zk_path + "/#{service['instance_id']}_"
       @full_key = nil
     end
 
@@ -80,6 +81,7 @@ class Nerve::Reporter
     end
 
     def zk_create
+      @zk.mkdir_p(@zk_path)
       @full_key = @zk.create(@key, :data => @data, :mode => :ephemeral_sequential)
     end
 
