@@ -40,7 +40,7 @@ module Nerve
           log.debug "nerve: check #{@name} got response code #{code} with body \"#{body}\""
           return true
         else
-          log.error "nerve: check #{@name} got response code #{code} with body \"#{body}\""
+          log.warn "nerve: check #{@name} got response code #{code} with body \"#{body}\""
           return false
         end
       end

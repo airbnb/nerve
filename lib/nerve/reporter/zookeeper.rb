@@ -29,7 +29,7 @@ class Nerve::Reporter
       @@zk_pool_lock.synchronize {
         unless @@zk_pool.has_key?(@path)
           log.info "nerve: creating pooled connection to #{@path}"
-          @@zk_pool[@path] = ZK.new(@path)
+          @@zk_pool[@path] = ZK.new(@path, :timeout => 5)
           @@zk_pool_count[@path] = 1
           log.info "nerve: successfully created zk connection to #{@path}"
         else
@@ -43,15 +43,22 @@ class Nerve::Reporter
 
     def stop()
       log.info "nerve: removing zk node at #{@full_key}" if @full_key
-      report_down
-      @@zk_pool_lock.synchronize {
-        @@zk_pool_count[@path] -= 1
-        # Last thread to use the connection closes it
-        if @@zk_pool_count[@path] == 0
-          log.info "nerve: closing zk connection to #{@path}"
-          @zk.close!
-        end
-      }
+      begin
+        report_down
+      ensure
+        @@zk_pool_lock.synchronize {
+          @@zk_pool_count[@path] -= 1
+          # Last thread to use the connection closes it
+          if @@zk_pool_count[@path] == 0
+            log.info "nerve: closing zk connection to #{@path}"
+            begin
+              @zk.close!
+            ensure
+              @@zk_pool.delete(@path)
+            end
+          end
+        }
+      end
     end
 
     def report_up()
