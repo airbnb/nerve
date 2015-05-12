@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'logger'
 require 'json'
 require 'timeout'
@@ -28,6 +29,7 @@ module Nerve
 
       @instance_id = opts['instance_id']
       @services = opts['services']
+      @heartbeat_path = opts['heartbeat_path']
       @watchers = {}
 
       log.debug 'nerve: completed init'
@@ -61,6 +63,11 @@ module Nerve
             end
             launch_watcher(name, @services[name])
           end
+
+          unless @heartbeat_path.nil?
+            FileUtils.touch(@heartbeat_path)
+          end
+
           sleep 10
         end
       rescue => e
