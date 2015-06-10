@@ -9,6 +9,15 @@ require "#{File.dirname(__FILE__)}/../lib/nerve"
 require 'factory_girl'
 FactoryGirl.find_definitions
 
+require 'vcr'
+
+VCR.configure do |c|
+  c.cassette_library_dir     = 'spec/cassettes'
+  c.hook_into                :webmock
+  c.default_cassette_options = { :record => :new_episodes }
+  c.configure_rspec_metadata!
+end
+
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
