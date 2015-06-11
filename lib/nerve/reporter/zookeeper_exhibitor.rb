@@ -90,7 +90,7 @@ class Nerve::Reporter
         raise "Something went wrong: #{res.body}"
       end
       hosts = JSON.load(res.body)
-      log.info hosts
+      log.debug hosts
       hosts['servers'].map { |s| s.concat(':' + hosts['port'].to_s) }
     end
 
