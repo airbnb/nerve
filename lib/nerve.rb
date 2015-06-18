@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'logger'
 require 'json'
 require 'timeout'
@@ -28,11 +29,8 @@ module Nerve
 
       @instance_id = opts['instance_id']
       @services = opts['services']
+      @heartbeat_path = opts['heartbeat_path']
       @watchers = {}
-
-      # Any exceptions in the watcher threads should wake the main thread so
-      # that we can fail fast.
-      Thread.abort_on_exception = true
 
       log.debug 'nerve: completed init'
     end
@@ -45,15 +43,41 @@ module Nerve
       end
 
       begin
-        sleep
-      rescue StandardError => e
+        loop do
+          # Check that watcher threads are still alive, auto-remediate if they
+          # are not. Sometimes zookeeper flakes out or connections are lost to
+          # remote datacenter zookeeper clusters, failing is not an option
+          relaunch = []
+          @watchers.each do |name, watcher_thread|
+            unless watcher_thread.alive?
+              log.warn "nerve: watcher #{name} not alive, attempting to relaunch"
+              relaunch << name
+            end
+          end
+
+          relaunch.each do |name|
+            begin
+              reap_watcher(name)
+            rescue => e
+              log.warn "nerve: could not reap #{name}, got #{e.inspect}"
+            end
+            launch_watcher(name, @services[name])
+          end
+
+          unless @heartbeat_path.nil?
+            FileUtils.touch(@heartbeat_path)
+          end
+
+          sleep 10
+        end
+      rescue => e
         log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
         raise e
       ensure
         $EXIT = true
         log.warn 'nerve: reaping all watchers'
         @watchers.each do |name, watcher_thread|
-          reap_watcher(name)
+          reap_watcher(name) rescue 'passing'
         end
       end
 

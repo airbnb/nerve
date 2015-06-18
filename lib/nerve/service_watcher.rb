@@ -83,7 +83,6 @@ module Nerve
       raise e
     ensure
       log.info "nerve: ending service watch #{@name}"
-      $EXIT = true
       @reporter.stop
     end
 
