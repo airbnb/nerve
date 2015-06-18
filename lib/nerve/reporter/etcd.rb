@@ -36,13 +36,6 @@ class Nerve::Reporter
       etcd_delete
     end
 
-    def update_data(new_data='')
-      # nothing in nerve calls this, but implement it like the zookeeper
-      # reporter just for fun.
-      @data = parse_data(new_data)
-      etcd_save
-    end
-
     def ping?
       # we get a ping every check_interval.
       if @key
