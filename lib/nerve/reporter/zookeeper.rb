@@ -10,12 +10,12 @@ class Nerve::Reporter
     @@zk_pool_lock = Mutex.new
 
     def initialize(service)
-      %w{zk_hosts zk_path instance_id host port}.each do |required|
+      %w{zk_hosts zk_path}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
       # Since we pool we get one connection per zookeeper cluster
       @path = service['zk_hosts'].sort.join(',')
-      @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
+      @data = parse_data(get_service_data(service))
 
       @zk_path = service['zk_path']
       @key = @zk_path + "/#{service['instance_id']}_"

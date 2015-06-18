@@ -4,14 +4,12 @@ require 'etcd'
 class Nerve::Reporter
   class Etcd < Base
     def initialize(service)
-      %w{etcd_host instance_id host port}.each do |required|
-        raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
-      end
+      raise ArgumentError, "missing required argument etcd_host for new service watcher" unless service['etcd_host']
       @host = service['etcd_host']
       @port = service['etcd_port'] || 4003
       path = service['etcd_path'] || '/'
       @path = path.split('/').push(service['instance_id']).join('/')
-      @data = parse_data({'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']})
+      @data = parse_data(get_service_data(service))
       @key = nil
       @ttl = (service['check_interval'] || 0.5) * 5
       @ttl = @ttl.ceil
