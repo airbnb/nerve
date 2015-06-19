@@ -69,11 +69,6 @@ class Nerve::Reporter
       zk_delete
     end
 
-    def update_data(new_data='')
-      @data = parse_data(new_data)
-      zk_save
-    end
-
     def ping?
       return @zk.ping?
     end
