@@ -70,7 +70,7 @@ class Nerve::Reporter
     end
 
     def ping?
-      return @zk.ping?
+      return @zk.connected? && @zk.exists?(@full_key || '/')
     end
 
     private
