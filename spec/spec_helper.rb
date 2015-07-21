@@ -13,6 +13,7 @@ RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
   config.include RbConfig
+  config.color = true
 
   # verify every double we can think of
   config.mock_with :rspec do |mocks|
