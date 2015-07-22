@@ -39,6 +39,7 @@ An example config file is available in `example/nerve.conf.json`.
 The config file is composed of two main sections:
 
 * `instance_id`: the name nerve will submit when registering services; makes debugging easier
+* `heartbeat_path`: a path to a file on disk to touch as nerve makes progress. This allows you to work around https://github.com/zk-ruby/zk/issues/50 by restarting a stuck nerve.
 * `services`: the hash (from service name to config) of the services nerve will be monitoring
 * `service_conf_dir`: path to a directory in which each json file will be interpreted as a service with the basename of the file minus the .json extension
 
