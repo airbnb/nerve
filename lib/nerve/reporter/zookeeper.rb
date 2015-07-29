@@ -14,30 +14,30 @@ class Nerve::Reporter
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
       # Since we pool we get one connection per zookeeper cluster
-      @path = service['zk_hosts'].sort.join(',')
+      @zk_connection_string = service['zk_hosts'].sort.join(',')
       @data = parse_data(get_service_data(service))
 
       @zk_path = service['zk_path']
-      @key = @zk_path + "/#{service['instance_id']}_"
+      @key_prefix = @zk_path + "/#{service['instance_id']}_"
       @full_key = nil
     end
 
     def start()
-      log.info "nerve: waiting to connect to zookeeper to #{@path}"
+      log.info "nerve: waiting to connect to zookeeper to #{@zk_connection_string}"
       # Ensure that all Zookeeper reporters re-use a single zookeeper
       # connection to any given set of zk hosts.
       @@zk_pool_lock.synchronize {
-        unless @@zk_pool.has_key?(@path)
-          log.info "nerve: creating pooled connection to #{@path}"
-          @@zk_pool[@path] = ZK.new(@path, :timeout => 5)
-          @@zk_pool_count[@path] = 1
-          log.info "nerve: successfully created zk connection to #{@path}"
+        unless @@zk_pool.has_key?(@zk_connection_string)
+          log.info "nerve: creating pooled connection to #{@zk_connection_string}"
+          @@zk_pool[@zk_connection_string] = ZK.new(@zk_connection_string, :timeout => 5)
+          @@zk_pool_count[@zk_connection_string] = 1
+          log.info "nerve: successfully created zk connection to #{@zk_connection_string}"
         else
-          @@zk_pool_count[@path] += 1
-          log.info "nerve: re-using existing zookeeper connection to #{@path}"
+          @@zk_pool_count[@zk_connection_string] += 1
+          log.info "nerve: re-using existing zookeeper connection to #{@zk_connection_string}"
         end
-        @zk = @@zk_pool[@path]
-        log.info "nerve: retrieved zk connection to #{@path}"
+        @zk = @@zk_pool[@zk_connection_string]
+        log.info "nerve: retrieved zk connection to #{@zk_connection_string}"
       }
     end
 
@@ -47,14 +47,14 @@ class Nerve::Reporter
         report_down
       ensure
         @@zk_pool_lock.synchronize {
-          @@zk_pool_count[@path] -= 1
+          @@zk_pool_count[@zk_connection_string] -= 1
           # Last thread to use the connection closes it
-          if @@zk_pool_count[@path] == 0
-            log.info "nerve: closing zk connection to #{@path}"
+          if @@zk_pool_count[@zk_connection_string] == 0
+            log.info "nerve: closing zk connection to #{@zk_connection_string}"
             begin
               @zk.close!
             ensure
-              @@zk_pool.delete(@path)
+              @@zk_pool.delete(@zk_connection_string)
             end
           end
         }
@@ -84,7 +84,7 @@ class Nerve::Reporter
 
     def zk_create
       @zk.mkdir_p(@zk_path)
-      @full_key = @zk.create(@key, :data => @data, :mode => :ephemeral_sequential)
+      @full_key = @zk.create(@key_prefix, :data => @data, :mode => :ephemeral_sequential)
     end
 
     def zk_save

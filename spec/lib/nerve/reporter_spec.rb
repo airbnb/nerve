@@ -59,10 +59,10 @@ describe Nerve::Reporter::Test do
       expect(subject.get_service_data({'host' => '127.0.0.1', 'port' => 6666, 'instance_id' => 'foobar'})['weight']).to eql(nil)
     end
     it 'skips weight if non integer' do
-      expect(subject.get_service_data({'host' => '127.0.0.1', 'port' => 6666, 'instance_id' => 'foobar', 'weight' => 'hello'})['weight']).to eql(nil)
+      expect { subject.get_service_data({'host' => '127.0.0.1', 'port' => 6666, 'instance_id' => 'foobar', 'weight' => 'hello'})['weight'] }.to raise_error(ArgumentError)
     end
     it 'skips weight if a negative integer' do
-      expect(subject.get_service_data({'host' => '127.0.0.1', 'port' => 6666, 'instance_id' => 'foobar', 'weight' => -1})['weight']).to eql(nil)
+      expect { subject.get_service_data({'host' => '127.0.0.1', 'port' => 6666, 'instance_id' => 'foobar', 'weight' => -1})['weight'] }.to raise_error(ArgumentError)
     end
     it 'works if the weight is a string' do
       expect(subject.get_service_data({'host' => '127.0.0.1', 'port' => 6666, 'instance_id' => 'foobar', 'weight' => '3'})['weight']).to eql(3)

@@ -50,13 +50,13 @@ module Nerve
           relaunch = []
           @watchers.each do |name, watcher_thread|
             unless watcher_thread.alive?
-              log.warn "nerve: watcher #{name} not alive, attempting to relaunch"
               relaunch << name
             end
           end
 
           relaunch.each do |name|
             begin
+              log.warn "nerve: watcher #{name} not alive; reaping and relaunching"
               reap_watcher(name)
             rescue => e
               log.warn "nerve: could not reap #{name}, got #{e.inspect}"
@@ -77,7 +77,7 @@ module Nerve
         $EXIT = true
         log.warn 'nerve: reaping all watchers'
         @watchers.each do |name, watcher_thread|
-          reap_watcher(name) rescue 'passing'
+          reap_watcher(name) rescue "nerve: watcher #{name} could not be immediately reaped; skippping"
         end
       end
 
