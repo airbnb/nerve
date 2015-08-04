@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nerve (0.5.4)
+    nerve (0.6.0)
       bunny (= 1.1.0)
       etcd (~> 0.2.3)
       json
@@ -34,7 +34,7 @@ GEM
     method_source (0.8.2)
     minitest (5.5.1)
     mixlib-log (1.6.0)
-    multi_json (1.10.1)
+    multi_json (1.11.2)
     pry (0.10.1)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -70,3 +70,6 @@ DEPENDENCIES
   pry
   rake
   rspec (~> 3.1.0)
+
+BUNDLED WITH
+   1.10.5
