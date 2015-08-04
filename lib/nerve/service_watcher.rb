@@ -83,12 +83,15 @@ module Nerve
       raise e
     ensure
       log.info "nerve: ending service watch #{@name}"
-      $EXIT = true
       @reporter.stop
     end
 
     def check_and_report
-      @reporter.ping?
+      if !@reporter.ping?
+        # If the reporter can't ping, then we do not know the status
+        # and must force a new report.
+        @was_up = nil
+      end
 
       # what is the status of the service?
       is_up = check?

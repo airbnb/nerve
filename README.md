@@ -39,6 +39,7 @@ An example config file is available in `example/nerve.conf.json`.
 The config file is composed of two main sections:
 
 * `instance_id`: the name nerve will submit when registering services; makes debugging easier
+* `heartbeat_path`: a path to a file on disk to touch as nerve makes progress. This allows you to work around https://github.com/zk-ruby/zk/issues/50 by restarting a stuck nerve.
 * `services`: the hash (from service name to config) of the services nerve will be monitoring
 * `service_conf_dir`: path to a directory in which each json file will be interpreted as a service with the basename of the file minus the .json extension
 
@@ -53,6 +54,7 @@ The configuration contains the following options:
 * `reporter_type`: the mechanism used to report up/down information; depending on the reporter you choose, additional parameters may be required. Defaults to `zookeeper`
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
+* `weight`: a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
 
 #### Zookeeper Reporter ####
 
