@@ -77,7 +77,7 @@ class Nerve::Reporter
 
     def fetch_hosts_from_exhibitor
       uri = URI(@exhibitor_url)
-      req = Net::HTTP::Get.new(uri)
+      req = Net::HTTP::Get.new(uri.request_uri)
       if @exhibitor_user && @exhibitor_password
         req.basic_auth(@exhibitor_user, @exhibitor_password)
       end
