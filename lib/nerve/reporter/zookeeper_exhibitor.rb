@@ -7,7 +7,7 @@ require 'zk'
 
 class Nerve::Reporter
   class ZookeeperExhibitor < Base
-    DEFAULT_EXHIBITOR_POLL_INTERVAL = 5
+    DEFAULT_EXHIBITOR_POLL_INTERVAL = 10
     def initialize(service)
       %w{exhibitor_url zk_path instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
@@ -61,7 +61,7 @@ class Nerve::Reporter
       @watcher = Thread.new do
         while true do
           new_zk_hosts = fetch_hosts_from_exhibitor
-          if new_zk_hosts and @zk_hosts != new_zk_hosts
+          if new_zk_hosts && @zk_hosts != new_zk_hosts
             log.info "nerve: ZooKeeper ensamble changed, going to reconnect"
             @zk_hosts = new_zk_hosts
             @path = @zk_hosts.shuffle.join(',') + @zk_path
@@ -78,7 +78,7 @@ class Nerve::Reporter
     def fetch_hosts_from_exhibitor
       uri = URI(@exhibitor_url)
       req = Net::HTTP::Get.new(uri)
-      if @exhibitor_user and @exhibitor_password
+      if @exhibitor_user && @exhibitor_password
         req.basic_auth(@exhibitor_user, @exhibitor_password)
       end
       req.add_field('Accept', 'application/json')
@@ -87,7 +87,8 @@ class Nerve::Reporter
       end
 
       if res.code.to_i != 200
-        raise "Something went wrong: #{res.body}"
+        log.error "Exhibitor poll failed: #{res.code}: #{res.body}"
+        return nil
       end
       hosts = JSON.load(res.body)
       log.debug hosts
