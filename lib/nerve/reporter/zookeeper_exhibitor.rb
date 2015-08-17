@@ -30,6 +30,7 @@ class Nerve::Reporter
     end
 
     def poll
+      return unless @watcher.nil?
       @watcher = Thread.new do
         while true do
           new_zk_hosts = fetch_hosts_from_exhibitor
@@ -39,7 +40,6 @@ class Nerve::Reporter
             @zk_connection_string = new_zk_hosts
             start
             report_up
-            break
           end
           sleep @exhibitor_poll_interval
         end
