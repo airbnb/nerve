@@ -17,6 +17,7 @@ describe Nerve::Reporter::ZookeeperExhibitor do
   it 'deregisters service on exit', :vcr do
     zk = double("zk")
     allow(zk).to receive(:close!)
+    expect(zk).to receive(:mkdir_p) { "zk_path" }
     expect(zk).to receive(:create) { "full_path" }
     expect(zk).to receive(:delete).with("full_path", anything())
 
