@@ -54,7 +54,8 @@ The configuration contains the following options:
 * `reporter_type`: the mechanism used to report up/down information; depending on the reporter you choose, additional parameters may be required. Defaults to `zookeeper`
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
-* `weight`: a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
+* `weight` (optional): a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
+* `haproxy_server_options` (optional): a string containing any special haproxy server options for this service instance. For example if you wanted to set a service instance as a backup.
 
 #### Zookeeper Reporter ####
 

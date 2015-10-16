@@ -26,14 +26,23 @@ class Nerve::Reporter
       %w{instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
-      d = {'host' => service['host'], 'port' => service['port'], 'name' => service['instance_id']}
-      return d unless service.has_key?('weight')
+      d = {
+        'host' => service['host'],
+        'port' => service['port'],
+        'name' => service['instance_id']
+      }
 
       # Weight is optional, but it should be well formed if supplied
-      if service['weight'].to_i >= 0 and "#{service['weight']}".match /^\d+$/
-        d['weight'] = service['weight'].to_i
-      else
-        raise ArgumentError, "invalid 'weight' argument in service data: #{service.inspect}"
+      if service.has_key?('weight')
+        if service['weight'].to_i >= 0 and "#{service['weight']}".match /^\d+$/
+          d['weight'] = service['weight'].to_i
+        else
+          raise ArgumentError, "invalid 'weight' argument in service data: #{service.inspect}"
+        end
+      end
+
+      if service.has_key?('haproxy_server_options')
+        d['haproxy_server_options'] = service['haproxy_server_options']
       end
       d
     end
