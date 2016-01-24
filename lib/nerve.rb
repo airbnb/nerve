@@ -10,6 +10,7 @@ require 'nerve/ring_buffer'
 require 'nerve/reporter'
 require 'nerve/service_watcher'
 
+
 module Nerve
   class Nerve
 
@@ -22,6 +23,7 @@ module Nerve
       $EXIT = false
 
       @watchers = {}
+      @watcher_versions = {}
       # Will be passed to load_config! by main loop
       # This decoupling is required for gracefully reloading config on SIGHUP
       reload_config!(opts)
@@ -50,21 +52,50 @@ module Nerve
       log.info 'nerve: starting run'
       begin
         loop do
+          # Check if configuration needs to be reloaded and reconcile any new
+          # configuration of watchers with old configuration
           if @config_to_load
             log.info "nerve: loading config"
             load_config!(@config_to_load)
             @config_to_load = false
 
-            new_services = @services.keys - @watchers.keys
-            new_services.each do |name|
+            services_to_launch, services_to_reap = [], []
+
+            # Determine which watchers have changed their configuration
+            (@services.keys | @watchers.keys).each do |name|
+              if @services.has_key?(name)
+                new_watcher_config = merged_config(@services[name], name)
+                # Service managed by nerve and has differing configuration
+                if new_watcher_config.hash != @watcher_versions[name]
+                  log.info "nerve: detected new config for #{name}"
+                  services_to_launch << name
+                  unless @watcher_versions[name].nil?
+                    # Keep the old watcher running until replacement is launched
+                    # This keeps the service registered while we change it over
+                    # This also keeps connection pools active across diffs
+                    new_name = "#{name}_#{@watcher_versions[name]}"
+                    @watchers[new_name] = @watchers.delete(name)
+                    @watcher_versions[new_name] = @watcher_versions.delete(name)
+                    services_to_reap << new_name
+                  end
+                end
+              else
+                # Service no longer managed by nerve
+                services_to_reap << name
+              end
+            end
+
+            log.info "nerve: launching new watchers: #{services_to_launch}"
+            services_to_launch.each do |name|
               launch_watcher(name, @services[name])
             end
 
-            removed_services = @watchers.keys -  @services.keys
-            removed_services.each do |name|
-              reap_watcher(name)
+            log.info "nerve: reaping old watchers: #{services_to_reap}"
+            services_to_reap.each do |name|
+                reap_watcher(name) rescue "nerve: could not cleanly reap #{name}"
             end
           end
+
           # Check that watcher threads are still alive, auto-remediate if they
           # are not. Sometimes zookeeper flakes out or connections are lost to
           # remote datacenter zookeeper clusters, failing is not an option
@@ -89,7 +120,13 @@ module Nerve
             FileUtils.touch(@heartbeat_path)
           end
 
-          sleep 10
+          # "Responsive" sleep 10
+          nap_time = 10
+          while nap_time > 0
+            break if @config_to_load
+            sleep [nap_time, 1].min
+            nap_time -= 1
+          end
         end
       rescue => e
         log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
@@ -107,17 +144,35 @@ module Nerve
       $EXIT = true
     end
 
+    def merged_config(config, name)
+      return config.merge({'instance_id' => @instance_id, 'name' => name})
+    end
+
     def launch_watcher(name, config)
       log.debug "nerve: launching service watcher #{name}"
-      watcher = ServiceWatcher.new(config.merge({'instance_id' => @instance_id, 'name' => name}))
+      watcher_config = merged_config(config, name)
+      # The ServiceWatcher may mutate the configs, so record the version before
+      # passing the config to the ServiceWatcher
+      @watcher_versions[name] = watcher_config.hash
+
+      watcher = ServiceWatcher.new(watcher_config)
       @watchers[name] = Thread.new{watcher.run}
     end
 
     def reap_watcher(name)
       watcher_thread = @watchers.delete(name)
+      @watcher_versions.delete(name)
       # Signal the watcher thread to exit
       watcher_thread[:finish] = true
-      watcher_thread.join()
+
+      unclean_shutdown = watcher_thread.join(10).nil?
+      if unclean_shutdown
+        log.error "nerve: unclean shutdown of #{name}, killing thread"
+        Thread.kill(watcher_thread)
+        raise "Could not join #{watcher_thread}"
+      end
+
+      !unclean_shutdown
     end
   end
 end
