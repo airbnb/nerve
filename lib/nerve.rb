@@ -21,29 +21,45 @@ module Nerve
       # set global variable for exit signal
       $EXIT = false
 
+      @watchers = {}
+      # Will be passed to load_config! by main loop
+      # This decoupling is required for gracefully reloading config on SIGHUP
+      reload_config!(opts)
+      @services = {}
+
+      log.debug 'nerve: completed init'
+    end
+
+    def reload_config!(opts)
+      # This can be called in a signal handler, hence the indirection
+      @config_to_load = opts
+    end
+
+    def load_config!(opts={})
       # required options
       log.debug 'nerve: checking for required inputs'
       %w{instance_id services}.each do |required|
         raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
       end
-
       @instance_id = opts['instance_id']
       @services = opts['services']
       @heartbeat_path = opts['heartbeat_path']
-      @watchers = {}
-
-      log.debug 'nerve: completed init'
     end
 
     def run
       log.info 'nerve: starting run'
-
-      @services.each do |name, config|
-        launch_watcher(name, config)
-      end
-
       begin
         loop do
+          if @config_to_load
+            log.info "nerve: loading config"
+            load_config!(@config_to_load)
+            @config_to_load = false
+
+            new_services = @services.keys - @watchers.keys
+            new_services.each do |name|
+              launch_watcher(name, @services[name])
+            end
+          end
           # Check that watcher threads are still alive, auto-remediate if they
           # are not. Sometimes zookeeper flakes out or connections are lost to
           # remote datacenter zookeeper clusters, failing is not an option
