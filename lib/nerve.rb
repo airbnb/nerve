@@ -59,6 +59,11 @@ module Nerve
             new_services.each do |name|
               launch_watcher(name, @services[name])
             end
+
+            removed_services = @watchers.keys -  @services.keys
+            removed_services.each do |name|
+              reap_watcher(name)
+            end
           end
           # Check that watcher threads are still alive, auto-remediate if they
           # are not. Sometimes zookeeper flakes out or connections are lost to
@@ -110,6 +115,8 @@ module Nerve
 
     def reap_watcher(name)
       watcher_thread = @watchers.delete(name)
+      # Signal the watcher thread to exit
+      watcher_thread[:finish] = true
       watcher_thread.join()
     end
   end
