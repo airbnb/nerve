@@ -10,42 +10,51 @@ require 'nerve/ring_buffer'
 require 'nerve/reporter'
 require 'nerve/service_watcher'
 
-
 module Nerve
   class Nerve
 
     include Logging
 
-    def initialize(opts={})
+    def initialize(config_manager)
       log.info 'nerve: starting up!'
+      @config_manager = config_manager
 
       # set global variable for exit signal
       $EXIT = false
 
       @watchers = {}
       @watcher_versions = {}
-      # Will be passed to load_config! by main loop
+
+      # Flag to indicate a config reload is required by the main loop
       # This decoupling is required for gracefully reloading config on SIGHUP
-      reload_config!(opts)
+      # as one should do basically nothing in a signal handler
+      @config_to_load = true
+      # Will be populated by load_config! in the main loop
+      @instance_id = nil
       @services = {}
+      @heartbeat_path = nil
 
-      log.debug 'nerve: completed init'
+      Signal.trap("HUP") do
+        @config_to_load = true
+      end
+
+     log.debug 'nerve: completed init'
     end
 
-    def reload_config!(opts)
-      # This can be called in a signal handler, hence the indirection
-      @config_to_load = opts
-    end
+    def load_config!
+      log.info 'nerve: loading config'
+      @config_to_load = false
+      @config_manager.reload!
+      config = @config_manager.config
 
-    def load_config!(opts={})
       # required options
       log.debug 'nerve: checking for required inputs'
       %w{instance_id services}.each do |required|
-        raise ArgumentError, "you need to specify required argument #{required}" unless opts[required]
+        raise ArgumentError, "you need to specify required argument #{required}" unless config[required]
       end
-      @instance_id = opts['instance_id']
-      @services = opts['services']
-      @heartbeat_path = opts['heartbeat_path']
+      @instance_id = config['instance_id']
+      @services = config['services']
+      @heartbeat_path = config['heartbeat_path']
     end
 
     def run
@@ -55,9 +64,7 @@ module Nerve
           # Check if configuration needs to be reloaded and reconcile any new
           # configuration of watchers with old configuration
           if @config_to_load
-            log.info "nerve: loading config"
-            load_config!(@config_to_load)
-            @config_to_load = false
+            load_config!
 
             services_to_launch, services_to_reap = [], []
 
