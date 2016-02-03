@@ -56,6 +56,7 @@ The configuration contains the following options:
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
 * `weight` (optional): a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
 * `haproxy_server_options` (optional): a string containing any special haproxy server options for this service instance. For example if you wanted to set a service instance as a backup.
+* `labels` (optional): an object containing user-defined key-value pairs that describe this service instance. For example, you could label service instances with datacenter information.
 
 #### Zookeeper Reporter ####
 
