@@ -23,6 +23,11 @@ describe "example services are valid" do
       it 'saves the weight data' do
         expect(JSON.parse(Nerve::Reporter.new_from_service(service_data).data)['weight']).to eql(2)
       end
+      it 'saves the labels data' do
+        labels = {'az' => 'us-west-1'}
+        service_data['labels'] = labels
+        expect(JSON.parse(Nerve::Reporter.new_from_service(service_data).data)['labels']).to eq(labels)
+      end
     end
 
     context "when #{item} can be initialized as a valid service watcher" do

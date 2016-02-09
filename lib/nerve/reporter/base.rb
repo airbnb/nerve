@@ -44,6 +44,10 @@ class Nerve::Reporter
       if service.has_key?('haproxy_server_options')
         d['haproxy_server_options'] = service['haproxy_server_options']
       end
+
+      if service.has_key?('labels')
+        d['labels'] = service['labels']
+      end
       d
     end
 
