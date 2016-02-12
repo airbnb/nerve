@@ -3,6 +3,7 @@ require 'optparse'
 
 module Nerve
   class ConfigurationManager
+    attr_reader :options
     attr_reader :config
 
     def parse_options!
@@ -24,6 +25,12 @@ EOB
         opts.on('-i instance_id','--instance_id instance_id', String,
           'reported as `name` to ZK; overrides instance id from config file') do |key,value|
           options[:instance_id] = key
+        end
+
+        options[:check_config] = ENV['NERVE_CHECK_CONFIG']
+        opts.on('-k', '--check-config',
+                'Validate the nerve config ONLY and exit 0 if valid (non zero otherwise)') do |_|
+          options[:check_config] = true
         end
 
         opts.on('-h', '--help', 'Display this screen') do

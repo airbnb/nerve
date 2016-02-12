@@ -4,15 +4,13 @@ require 'yaml'
 require 'optparse'
 
 require 'nerve'
-require 'nerve/configuration'
+require 'nerve/configuration_manager'
 
 # Parse command line options and parse configuration
 config_manager = Nerve::ConfigurationManager.new()
 config_manager.parse_options!
 
 nerve_application = Nerve::Nerve.new(config_manager)
-
-# Start nerve
 nerve_application.run
 
 puts "exiting nerve"

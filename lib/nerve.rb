@@ -29,6 +29,7 @@ module Nerve
       # This decoupling is required for gracefully reloading config on SIGHUP
       # as one should do basically nothing in a signal handler
       @config_to_load = true
+
       # Will be populated by load_config! in the main loop
       @instance_id = nil
       @services = {}
@@ -103,6 +104,12 @@ module Nerve
             end
           end
 
+          # If this was a configuration check, bail out now
+          if @config_manager.options[:check_config]
+            log.info 'nerve: configuration check succeeded, exiting'
+            break
+          end
+
           # Check that watcher threads are still alive, auto-remediate if they
           # are not. Sometimes zookeeper flakes out or connections are lost to
           # remote datacenter zookeeper clusters, failing is not an option
@@ -163,7 +170,9 @@ module Nerve
       @watcher_versions[name] = watcher_config.hash
 
       watcher = ServiceWatcher.new(watcher_config)
-      @watchers[name] = Thread.new{watcher.run}
+      unless @config_manager.options[:check_config]
+        @watchers[name] = Thread.new{watcher.run}
+      end
     end
 
     def reap_watcher(name)

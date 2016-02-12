@@ -10,9 +10,6 @@ module Nerve
     def initialize(service={})
       log.debug "nerve: creating service watcher object"
 
-      # So this thread can be interrupted
-      Thread.current[:finish] = false
-
       # check that we have all of the required arguments
       %w{name instance_id host port}.each do |required|
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
@@ -65,6 +62,8 @@ module Nerve
 
     def run()
       log.info "nerve: starting service watch #{@name}"
+      # So this thread can be interrupted
+      Thread.current[:finish] = false
 
       @reporter.start()
 
