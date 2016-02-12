@@ -19,17 +19,27 @@ The information it reports can be used to take action from a centralized automat
 
 ## Installation ##
 
-Add this line to your application's Gemfile:
+To download and run the nerve binary, first install a version of ruby. Then,
+install nerve with:
 
-    gem 'nerve'
+```bash
+$ mkdir -p /opt/smartstack/nerve
 
-And then execute:
+# If you want to install specific versions of dependencies such as an older
+# version of the aws-sdk, the docker-api, etc, gem install that here *before*
+# gem installing nerve. This is also where you would gem install
+# custom reporters.
 
-    $ bundle
+# If you are on Ruby 2.X use --no-document instead of --no-ri --no-rdoc
+$ gem install nerve --install-dir /opt/smartstack/nerve --no-ri --no-rdoc
+```
 
-Or install it yourself as:
-
-    $ gem install nerve
+This will download nerve and its dependencies into /opt/smartstack/nerve. You
+might wish to omit the `--install-dir` flag to use your system's default gem
+path, however this will require you to run `gem install nerve` with root
+permissions. You can also install via bundler, but keep in mind you'll pick up
+Nerve's version of library dependencies and possibly not the ones you need
+for your infra/apps.
 
 ## Configuration ##
 
