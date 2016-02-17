@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nerve (0.6.0)
+    nerve (0.7.0)
       bunny (= 1.1.0)
       etcd (~> 0.2.3)
       json
