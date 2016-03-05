@@ -32,7 +32,7 @@ module Nerve
 
       # Will be populated by load_config! in the main loop
       @instance_id = nil
-      @services = {}
+      @watchers_desired = {}
       @heartbeat_path = nil
 
       Signal.trap("HUP") do
@@ -54,7 +54,7 @@ module Nerve
         raise ArgumentError, "you need to specify required argument #{required}" unless config[required]
       end
       @instance_id = config['instance_id']
-      @services = config['services']
+      @watchers_desired = config['services']
       @heartbeat_path = config['heartbeat_path']
     end
 
@@ -67,41 +67,43 @@ module Nerve
           if @config_to_load
             load_config!
 
-            services_to_launch, services_to_reap = [], []
-
-            # Determine which watchers have changed their configuration
-            (@services.keys | @watchers.keys).each do |name|
-              if @services.has_key?(name)
-                new_watcher_config = merged_config(@services[name], name)
-                # Service managed by nerve and has differing configuration
-                if new_watcher_config.hash != @watcher_versions[name]
-                  log.info "nerve: detected new config for #{name}"
-                  services_to_launch << name
-                  unless @watcher_versions[name].nil?
-                    # Keep the old watcher running until replacement is launched
-                    # This keeps the service registered while we change it over
-                    # This also keeps connection pools active across diffs
-                    new_name = "#{name}_#{@watcher_versions[name]}"
-                    @watchers[new_name] = @watchers.delete(name)
-                    @watcher_versions[new_name] = @watcher_versions.delete(name)
-                    services_to_reap << new_name
-                  end
-                end
-              else
-                # Service no longer managed by nerve
-                services_to_reap << name
-              end
-            end
-
-            log.info "nerve: launching new watchers: #{services_to_launch}"
-            services_to_launch.each do |name|
-              launch_watcher(name, @services[name])
-            end
-
+            # Reap undesired service watchers
+            services_to_reap = @watchers.select{ |name, _|
+              !@watchers_desired.has_key?(name)
+            }.keys()
             log.info "nerve: reaping old watchers: #{services_to_reap}"
             services_to_reap.each do |name|
                 reap_watcher(name) rescue "nerve: could not cleanly reap #{name}"
             end
+
+            # Start new desired service watchers
+            services_to_launch = @watchers_desired.select{ |name, _|
+              !@watchers.has_key?(name)
+            }.keys()
+            log.info "nerve: launching new watchers: #{services_to_launch}"
+            services_to_launch.each do |name|
+              launch_watcher(name, @watchers_desired[name])
+            end
+
+            # Detect and update existing service watchers
+            services_to_update = @watchers.select { |name, _|
+              @watchers_desired.has_key?(name)
+            }.each { |name, _|
+              new_watcher_config = merged_config(@watchers_desired[name], name)
+              if new_watcher_config.hash != @watcher_versions[name]
+                log.info "nerve: detected new config for #{name}"
+                # Keep the old watcher running until the replacement is launched
+                # This keeps the service registered while we change it over
+                # This also keeps connection pools active across diffs
+                temp_name = "#{name}_#{@watcher_versions[name]}"
+                @watchers[temp_name] = @watchers.delete(name)
+                @watcher_versions[temp_name] = @watcher_versions.delete(name)
+                log.info "nerve: launching new watcher for #{name}"
+                launch_watcher(name, @watchers_desired[name])
+                log.info "nerve: reaping old watcher #{temp_name}"
+                reap_watcher(temp_name) rescue "nerve: could not cleanly reap #{name}"
+              end
+            }
           end
 
           # If this was a configuration check, bail out now
@@ -127,7 +129,7 @@ module Nerve
             rescue => e
               log.warn "nerve: could not reap #{name}, got #{e.inspect}"
             end
-            launch_watcher(name, @services[name])
+            launch_watcher(name, @watchers_desired[name])
           end
 
           unless @heartbeat_path.nil?
