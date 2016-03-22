@@ -38,7 +38,7 @@ end
 optparse.parse!
 
 def parseconfig(filename)
-  # parse synapse config file
+  # parse nerve config file
   begin
     c = YAML::parse(File.read(filename))
   rescue Errno::ENOENT => e
