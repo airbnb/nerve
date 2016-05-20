@@ -10,7 +10,7 @@ describe Nerve::ServiceWatcher do
     end
 
     it 'requires minimum parameters' do
-      %w[name instance_id host port].each do |req|
+      %w[name instance_id host].each do |req|
         service_without = service.dup
         service_without.delete(req)
 
