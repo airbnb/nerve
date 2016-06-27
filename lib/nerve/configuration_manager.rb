@@ -6,7 +6,7 @@ module Nerve
     attr_reader :options
     attr_reader :config
 
-    def parse_options!
+    def parse_options_from_argv!
       options = {}
       # set command line options
       optparse = OptionParser.new do |opts|
@@ -39,8 +39,11 @@ EOB
         end
       end
       optparse.parse!
-      @options = options
-      @options
+      options
+    end
+
+    def parse_options!
+     @options = parse_options_from_argv!
     end
 
     def generate_nerve_config(options)
