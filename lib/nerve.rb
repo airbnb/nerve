@@ -171,7 +171,9 @@ module Nerve
     end
 
     def merged_config(config, name)
-      return config.merge({'instance_id' => @instance_id, 'name' => name})
+      # Get a deep copy so sub-hashes are properly handled
+      deep_copy = Marshal.load(Marshal.dump(config))
+      return deep_copy.merge({'instance_id' => @instance_id, 'name' => name})
     end
 
     def launch_watcher(name, config)
