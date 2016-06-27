@@ -16,7 +16,7 @@ module Nerve
     include Logging
 
     def initialize(config_manager)
-      log.info 'nerve: starting up!'
+      log.info 'nerve: setting up!'
       @config_manager = config_manager
 
       # set global variable for exit signal
@@ -61,7 +61,7 @@ module Nerve
     end
 
     def run
-      log.info 'nerve: starting run'
+      log.info 'nerve: starting main run loop'
       begin
         loop do
           # Check if configuration needs to be reloaded and reconcile any new
@@ -118,7 +118,7 @@ module Nerve
 
           # If this was a configuration check, bail out now
           if @config_manager.options[:check_config]
-            log.info 'nerve: configuration check succeeded, exiting'
+            log.info 'nerve: configuration check succeeded, exiting immediately'
             break
           end
 
@@ -175,7 +175,6 @@ module Nerve
     end
 
     def launch_watcher(name, config)
-      log.debug "nerve: launching service watcher #{name}"
       watcher_config = merged_config(config, name)
       # The ServiceWatcher may mutate the configs, so record the version before
       # passing the config to the ServiceWatcher
@@ -183,7 +182,10 @@ module Nerve
 
       watcher = ServiceWatcher.new(watcher_config)
       unless @config_manager.options[:check_config]
+        log.debug "nerve: launching service watcher #{name}"
         @watchers[name] = Thread.new{watcher.run}
+      else
+        log.info "nerve: not launching #{name} due to --check-config option"
       end
     end
 
