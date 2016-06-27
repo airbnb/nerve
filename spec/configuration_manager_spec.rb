@@ -9,14 +9,14 @@ describe Nerve::ConfigurationManager do
 
     it 'parses options' do
       allow(config_manager).to receive(:parse_options_from_argv!) { {
-        :config => "/Users/jlynch/pg/nerve/spec/../example/nerve.conf.json",
+        :config => nerve_config,
         :instance_id => "testid",
         :check_config => false
       } }
 
       expect{config_manager.reload!}.to raise_error(RuntimeError)
       expect(config_manager.parse_options!).to eql({
-        :config => "/Users/jlynch/pg/nerve/spec/../example/nerve.conf.json",
+        :config => nerve_config,
         :instance_id => "testid",
         :check_config => false
       })
