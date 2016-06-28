@@ -7,6 +7,8 @@
 require "#{File.dirname(__FILE__)}/../lib/nerve"
 
 require 'factory_girl'
+require 'rspec/wait'
+
 FactoryGirl.find_definitions
 
 RSpec.configure do |config|
