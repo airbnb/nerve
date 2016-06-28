@@ -2,22 +2,22 @@ require 'spec_helper'
 require 'nerve/configuration_manager'
 
 describe Nerve::ConfigurationManager do
-  describe 'normal run' do
+  describe 'parsing config' do
     let(:config_manager) { Nerve::ConfigurationManager.new() }
     let(:nerve_config) { "#{File.dirname(__FILE__)}/../example/nerve.conf.json" }
-    let(:nerve_instance_id) { "testid" }
+    let(:nerve_instance_id) { 'testid' }
 
-    it 'parses options' do
+    it 'parses valid options' do
       allow(config_manager).to receive(:parse_options_from_argv!) { {
         :config => nerve_config,
-        :instance_id => "testid",
+        :instance_id => nerve_instance_id,
         :check_config => false
       } }
 
       expect{config_manager.reload!}.to raise_error(RuntimeError)
       expect(config_manager.parse_options!).to eql({
         :config => nerve_config,
-        :instance_id => "testid",
+        :instance_id => nerve_instance_id,
         :check_config => false
       })
       expect{config_manager.reload!}.not_to raise_error
