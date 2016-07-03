@@ -32,6 +32,7 @@ describe Nerve::Nerve do
       allow_any_instance_of(Nerve::ServiceWatcher).to receive(:run) {
         # ServiceWatchers just infinite loop
         loop do
+          Thread.current[:has_reported] = true
           sleep 0.5
           break if Thread.current[:finish]
         end

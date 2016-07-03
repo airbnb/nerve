@@ -14,6 +14,7 @@ module Nerve
   class Nerve
 
     include Logging
+    include Utils
 
     def initialize(config_manager)
       log.info 'nerve: setting up!'
@@ -110,7 +111,7 @@ module Nerve
               @watchers[temp_name] = @watchers.delete(name)
               @watcher_versions[temp_name] = @watcher_versions.delete(name)
               log.info "nerve: launching new watcher for #{name}"
-              launch_watcher(name, @watchers_desired[name])
+              launch_watcher(name, @watchers_desired[name], true)
               log.info "nerve: reaping old watcher #{temp_name}"
               reap_watcher(temp_name) rescue "nerve: could not cleanly reap #{name}"
             end
@@ -146,13 +147,7 @@ module Nerve
             FileUtils.touch(@heartbeat_path)
           end
 
-          # "Responsive" sleep 10
-          nap_time = 10
-          while nap_time > 0
-            break if @config_to_load
-            sleep [nap_time, 1].min
-            nap_time -= 1
-          end
+          responsive_sleep(10) { break if @config_to_load }
         end
       rescue => e
         log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
@@ -176,7 +171,7 @@ module Nerve
       return deep_copy.merge({'instance_id' => @instance_id, 'name' => name})
     end
 
-    def launch_watcher(name, config)
+    def launch_watcher(name, config, wait=false)
       watcher_config = merged_config(config, name)
       # The ServiceWatcher may mutate the configs, so record the version before
       # passing the config to the ServiceWatcher
@@ -185,7 +180,13 @@ module Nerve
       watcher = ServiceWatcher.new(watcher_config)
       unless @config_manager.options[:check_config]
         log.debug "nerve: launching service watcher #{name}"
-        @watchers[name] = Thread.new{watcher.run}
+        watcher_thread = Thread.new { watcher.run }
+        @watchers[name] = watcher_thread
+        if wait
+          log.info "nerve: waiting for watcher thread #{name} to report"
+          responsive_sleep(30) { break if watcher_thread[:has_reported] }
+          log.info "nerve: watcher thread #{name} has reported!"
+        end
       else
         log.info "nerve: not launching #{name} due to --check-config option"
       end

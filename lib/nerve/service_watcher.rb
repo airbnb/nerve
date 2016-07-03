@@ -64,21 +64,21 @@ module Nerve
       log.info "nerve: starting service watch #{@name}"
       # So this thread can be interrupted
       Thread.current[:finish] = false
+      # So other threads can poll on this reporting
+      Thread.current[:has_reported] = false
 
       @reporter.start()
 
       until $EXIT or Thread.current[:finish]
         check_and_report
+        Thread.current[:has_reported] |= true
 
         # wait to run more checks but make sure to exit if $EXIT
         # we avoid sleeping for the entire check interval at once
         # so that nerve can exit promptly if required
-        nap_time = @check_interval
-        while nap_time > 0
-          break if $EXIT
-          sleep [nap_time, 1].min
-          nap_time -= 1
-        end
+        responsive_sleep (@check_interval) {
+          break if $EXIT or Thread.current[:finish]
+        }
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
