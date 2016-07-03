@@ -71,7 +71,7 @@ module Nerve
 
       until $EXIT or Thread.current[:finish]
         check_and_report
-        Thread.current[:has_reported] |= true
+        Thread.current[:has_reported] ||= true
 
         # wait to run more checks but make sure to exit if $EXIT
         # we avoid sleeping for the entire check interval at once
