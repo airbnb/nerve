@@ -27,12 +27,12 @@ describe Nerve::Nerve do
     end
   end
 
-  describe 'responds to reconfigures' do
+  describe 'full application run' do
     before(:each) {
       allow_any_instance_of(Nerve::ServiceWatcher).to receive(:run) {
         # ServiceWatchers just infinite loop
         loop do
-          Thread.current[:has_reported] = true
+          Thread.current[:has_reported] |= true
           sleep 0.5
           break if Thread.current[:finish]
         end
@@ -61,27 +61,25 @@ describe Nerve::Nerve do
       } }
     }
 
-    subject {
-      Nerve::Nerve.new(mock_config_manager)
-    }
-
     it 'does a regular run and finishes' do
+      nerve = Nerve::Nerve.new(mock_config_manager)
       app = Thread.new {
-        subject.run
+        nerve.run
       }
-      wait_for { subject.instance_variable_get(:@watchers).keys }.to contain_exactly('service1', 'service2')
+      wait_for { nerve.instance_variable_get(:@watchers).keys }.to contain_exactly('service1', 'service2')
       # Terminate the app
       app.raise()
       wait_for { app.alive? }.to eq(false)
     end
 
 
-    it 'responds to SIGHUPs' do
+    it 'responds to changes in configuration' do
+      nerve = Nerve::Nerve.new(mock_config_manager)
       app = Thread.new {
-        subject.run
+        nerve.run
       }
 
-      wait_for { subject.instance_variable_get(:@watchers).keys }.to contain_exactly('service1', 'service2')
+      wait_for { nerve.instance_variable_get(:@watchers).keys }.to contain_exactly('service1', 'service2')
 
       # Remove service2 from the config
       allow(mock_config_manager).to receive(:config) { {
@@ -95,8 +93,8 @@ describe Nerve::Nerve do
       } }
 
       # Simulate a SIGHUP
-      subject.instance_variable_set(:@config_to_load, true)
-      wait_for { subject.instance_variable_get(:@watchers).keys }.to contain_exactly('service1')
+      nerve.instance_variable_set(:@config_to_load, true)
+      wait_for { nerve.instance_variable_get(:@watchers).keys }.to contain_exactly('service1')
 
 
       # Change the configuration of service1
@@ -109,9 +107,9 @@ describe Nerve::Nerve do
           },
         }
       } }
-      subject.instance_variable_set(:@config_to_load, true)
-      wait_for { subject.instance_variable_get(:@config_to_load) }.to eq(false)
-      wait_for { subject.instance_variable_get(:@watchers_desired)['service1']['port'] }.to eq(1236)
+      nerve.instance_variable_set(:@config_to_load, true)
+      wait_for { nerve.instance_variable_get(:@config_to_load) }.to eq(false)
+      wait_for { nerve.instance_variable_get(:@watchers_desired)['service1']['port'] }.to eq(1236)
 
       # Add another service
       allow(mock_config_manager).to receive(:config) { {
@@ -128,8 +126,8 @@ describe Nerve::Nerve do
         }
       } }
 
-      subject.instance_variable_set(:@config_to_load, true)
-      wait_for { subject.instance_variable_get(:@watchers).keys }.to contain_exactly('service1', 'service4')
+      nerve.instance_variable_set(:@config_to_load, true)
+      wait_for { nerve.instance_variable_get(:@watchers).keys }.to contain_exactly('service1', 'service4')
 
       # Terminate the app
       app.raise()
