@@ -42,7 +42,7 @@ module Nerve
         @config_to_load = true
       end
 
-     log.debug 'nerve: completed init'
+      log.debug 'nerve: completed init'
     end
 
     def load_config!
