@@ -7,7 +7,6 @@
 require "#{File.dirname(__FILE__)}/../lib/nerve"
 
 require 'factory_girl'
-require 'rspec/wait'
 
 FactoryGirl.find_definitions
 
@@ -16,7 +15,6 @@ RSpec.configure do |config|
   config.filter_run :focus
   config.include RbConfig
   config.color = true
-  config.wait_timeout = 30
 
   # verify every double we can think of
   config.mock_with :rspec do |mocks|
