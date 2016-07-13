@@ -64,7 +64,7 @@ module Nerve
     def run
       log.info 'nerve: starting main run loop'
       begin
-        loop do
+        until $EXIT
           # Check if configuration needs to be reloaded and reconcile any new
           # configuration of watchers with old configuration
           if @config_to_load
@@ -78,7 +78,7 @@ module Nerve
             unless services_to_reap.empty?
               log.info "nerve: reaping old watchers: #{services_to_reap}"
               services_to_reap.each do |name|
-                  reap_watcher(name) rescue "nerve: could not cleanly reap #{name}"
+                  reap_watcher(name)
               end
             end
 
@@ -113,7 +113,7 @@ module Nerve
               log.info "nerve: launching new watcher for #{name}"
               launch_watcher(name, @watchers_desired[name], true)
               log.info "nerve: reaping old watcher #{temp_name}"
-              reap_watcher(temp_name) rescue "nerve: could not cleanly reap #{name}"
+              reap_watcher(temp_name)
             end
           end
 
@@ -123,12 +123,12 @@ module Nerve
             break
           end
 
-          # Check that watcher threads are still alive, auto-remediate if they
+          # Check that watchers are still alive, auto-remediate if they
           # are not. Sometimes zookeeper flakes out or connections are lost to
           # remote datacenter zookeeper clusters, failing is not an option
           relaunch = []
-          @watchers.each do |name, watcher_thread|
-            unless watcher_thread.alive?
+          @watchers.each do |name, watcher|
+            unless watcher.alive?
               relaunch << name
             end
           end
@@ -143,11 +143,10 @@ module Nerve
             launch_watcher(name, @watchers_desired[name])
           end
 
-          unless @heartbeat_path.nil?
-            FileUtils.touch(@heartbeat_path)
-          end
+          # Indicate we've made progress
+          heartbeat()
 
-          responsive_sleep(10) { break if @config_to_load }
+          responsive_sleep(10) { @config_to_load || $EXIT }
         end
       rescue => e
         log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
@@ -155,14 +154,20 @@ module Nerve
       ensure
         $EXIT = true
         log.warn 'nerve: reaping all watchers'
-        @watchers.each do |name, watcher_thread|
-          reap_watcher(name) rescue "nerve: watcher #{name} could not be immediately reaped; skippping"
+        @watchers.each do |name, _|
+          reap_watcher(name)
         end
       end
 
       log.info 'nerve: exiting'
     ensure
       $EXIT = true
+    end
+
+    def heartbeat
+      unless @heartbeat_path.nil?
+        FileUtils.touch(@heartbeat_path)
+      end
     end
 
     def merged_config(config, name)
@@ -180,11 +185,11 @@ module Nerve
       watcher = ServiceWatcher.new(watcher_config)
       unless @config_manager.options[:check_config]
         log.debug "nerve: launching service watcher #{name}"
-        watcher_thread = Thread.new { watcher.run }
-        @watchers[name] = watcher_thread
+        watcher.start()
+        @watchers[name] = watcher
         if wait
           log.info "nerve: waiting for watcher thread #{name} to report"
-          responsive_sleep(30) { break if watcher_thread[:has_reported] }
+          responsive_sleep(30) { !watcher.was_up.nil? || $EXIT }
           log.info "nerve: watcher thread #{name} has reported!"
         end
       else
@@ -193,19 +198,11 @@ module Nerve
     end
 
     def reap_watcher(name)
-      watcher_thread = @watchers.delete(name)
+      watcher = @watchers.delete(name)
       @watcher_versions.delete(name)
-      # Signal the watcher thread to exit
-      watcher_thread[:finish] = true
-
-      unclean_shutdown = watcher_thread.join(10).nil?
-      if unclean_shutdown
-        log.error "nerve: unclean shutdown of #{name}, killing thread"
-        Thread.kill(watcher_thread)
-        raise "Could not join #{watcher_thread}"
-      end
-
-      !unclean_shutdown
+      shutdown_status = watcher.stop()
+      log.info "nerve: stopped #{name}"
+      shutdown_status
     end
   end
 end
