@@ -111,7 +111,7 @@ module Nerve
               @watchers[temp_name] = @watchers.delete(name)
               @watcher_versions[temp_name] = @watcher_versions.delete(name)
               log.info "nerve: launching new watcher for #{name}"
-              launch_watcher(name, @watchers_desired[name], true)
+              launch_watcher(name, @watchers_desired[name], :wait => true)
               log.info "nerve: reaping old watcher #{temp_name}"
               reap_watcher(temp_name)
             end
@@ -168,6 +168,7 @@ module Nerve
       unless @heartbeat_path.nil?
         FileUtils.touch(@heartbeat_path)
       end
+      log.debug 'nerve: heartbeat'
     end
 
     def merged_config(config, name)
@@ -176,7 +177,9 @@ module Nerve
       return deep_copy.merge({'instance_id' => @instance_id, 'name' => name})
     end
 
-    def launch_watcher(name, config, wait=false)
+    def launch_watcher(name, config, opts = {})
+      wait = opts[:wait] || false
+
       watcher_config = merged_config(config, name)
       # The ServiceWatcher may mutate the configs, so record the version before
       # passing the config to the ServiceWatcher
