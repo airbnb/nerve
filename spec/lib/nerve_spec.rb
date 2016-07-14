@@ -6,7 +6,7 @@ require 'nerve/reporter/base'
 require 'nerve'
 
 def make_mock_service_watcher
-    mock_service_watcher = double(Nerve::ServiceWatcher)
+    mock_service_watcher = instance_double(Nerve::ServiceWatcher)
     allow(mock_service_watcher).to receive(:start)
     allow(mock_service_watcher).to receive(:stop)
     allow(mock_service_watcher).to receive(:alive?).and_return(true)
@@ -16,7 +16,7 @@ end
 
 describe Nerve::Nerve do
   let(:config_manager) { Nerve::ConfigurationManager.new() }
-  let(:mock_config_manager) { double() }
+  let(:mock_config_manager) { instance_double(Nerve::ConfigurationManager) }
   let(:nerve_config) { "#{File.dirname(__FILE__)}/../../example/nerve.conf.json" }
   let(:nerve_instance_id) { 'testid' }
   let(:mock_service_watcher_one) { make_mock_service_watcher() }
@@ -97,7 +97,7 @@ describe Nerve::Nerve do
       expect(nerve).to receive(:launch_watcher).once.with('service2', anything).and_call_original
       expect(nerve).to receive(:reap_watcher).once.with('service2').and_call_original
 
-      expect(nerve).to receive(:heartbeat).exactly(iterations + 1).times {
+      expect(nerve).to receive(:heartbeat).exactly(iterations + 1).times do
         if iterations == 2
           expect(mock_service_watcher_one).to receive(:alive?).and_return(false)
           nerve.instance_variable_set(:@config_to_load, true)
@@ -108,7 +108,7 @@ describe Nerve::Nerve do
           $EXIT = true
         end
         iterations -= 1
-      }
+      end
 
       expect{ nerve.run }.not_to raise_error
     end
@@ -117,7 +117,7 @@ describe Nerve::Nerve do
       nerve = Nerve::Nerve.new(mock_config_manager)
 
       iterations = 4
-      expect(nerve).to receive(:heartbeat).exactly(iterations + 1).times {
+      expect(nerve).to receive(:heartbeat).exactly(iterations + 1).times do
         if iterations == 4
           expect(nerve.instance_variable_get(:@watchers).keys).to contain_exactly('service1', 'service2')
 
@@ -176,7 +176,7 @@ describe Nerve::Nerve do
           $EXIT = true
         end
         iterations -= 1
-      }
+      end
 
       expect{ nerve.run }.not_to raise_error
     end
