@@ -12,9 +12,11 @@ require 'nerve/service_watcher'
 
 module Nerve
   class Nerve
-
     include Logging
     include Utils
+
+    MAIN_LOOP_SLEEP_S = 10.freeze
+    LAUNCH_WAIT_FOR_REPORT_S = 30.freeze
 
     def initialize(config_manager)
       log.info 'nerve: setting up!'
@@ -146,7 +148,7 @@ module Nerve
           # Indicate we've made progress
           heartbeat()
 
-          responsive_sleep(10) { @config_to_load || $EXIT }
+          responsive_sleep(MAIN_LOOP_SLEEP_S) { @config_to_load || $EXIT }
         end
       rescue => e
         log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
@@ -192,7 +194,7 @@ module Nerve
         @watchers[name] = watcher
         if wait
           log.info "nerve: waiting for watcher thread #{name} to report"
-          responsive_sleep(30) { !watcher.was_up.nil? || $EXIT }
+          responsive_sleep(LAUNCH_WAIT_FOR_REPORT_S) { !watcher.was_up.nil? || $EXIT }
           log.info "nerve: watcher thread #{name} has reported!"
         end
       else
@@ -204,7 +206,7 @@ module Nerve
       watcher = @watchers.delete(name)
       @watcher_versions.delete(name)
       shutdown_status = watcher.stop()
-      log.info "nerve: stopped #{name}"
+      log.info "nerve: stopped #{name}, clean shutdown? #{shutdown_status}"
       shutdown_status
     end
   end

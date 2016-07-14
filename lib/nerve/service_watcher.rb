@@ -97,15 +97,13 @@ module Nerve
       log.info "nerve: starting service watch #{@name}"
       @reporter.start()
 
-      until $EXIT or @should_finish
+      until watcher_should_exit?
         check_and_report
 
         # wait to run more checks but make sure to exit if $EXIT
         # we avoid sleeping for the entire check interval at once
         # so that nerve can exit promptly if required
-        responsive_sleep (@check_interval) {
-          $EXIT or @should_finish
-        }
+        responsive_sleep (@check_interval) { watcher_should_exit? }
       end
     rescue StandardError => e
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
@@ -144,5 +142,11 @@ module Nerve
       end
       return true
     end
+
+    private
+    def watcher_should_exit?
+      $EXIT || @should_finish
+    end
+
   end
 end
