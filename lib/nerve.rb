@@ -70,7 +70,10 @@ module Nerve
 
           sleep 10
         end
-      rescue => e
+      rescue SignalException => e
+        log.info "nerve: received signal #{e} #{e.signo}"
+        raise e
+      rescue Exception => e
         log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
         raise e
       ensure
