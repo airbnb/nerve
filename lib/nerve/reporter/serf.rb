@@ -6,7 +6,7 @@ class Nerve::Reporter
 
       # Set default parameters - the defaults are sane so nothing needed.
       @config_dir = service['serf_config_dir'] || '/etc/serf'
-      @reload_command = service['reload_command'] || '/usr/bin/killall -HUP serf'
+      @reload_command = service['serf_reload_command'] || '/usr/bin/killall -HUP serf'
       @name       = service['name']
       # please note that because of
       # https://github.com/airbnb/smartstack-cookbook/blob/master/recipes/nerve.rb#L71

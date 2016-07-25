@@ -94,10 +94,10 @@ You can use Nerve together with [Serf](https://www.serf.io/), which requires:
 * `serf_config_dir`: a directory to place files in that is readable/writable by both Serf and Nerve. 
     * Nerve will place configuration files named `zzz_nerve_<some-service>_<port>.json` under the directory specified with `serf_config_dir`. 
     * Serf will read these configurations and must be configured to run with `-config-dir=<serf_config_dir>`
-* Nerve must have permissions to reload the serf process. (can be specified by the `reload_command` parameter - defaults to `/usr/bin/killall -HUP serf`)
+* Nerve must have permissions to reload the serf process. (can be specified by the `serf_reload_command` parameter - defaults to `/usr/bin/killall -HUP serf`)
     * (You can for example install Serf and Nerve to run under the same user) 
 
-Configuration management code to use Serf together with Nerve/Synapse can be found here:
+Configuration management code and example Vagrant setup to use Serf together with Nerve/Synapse can be found here:
    
 * Ansible: https://github.com/AutomationWithAnsible/ansible-smartstack
 
