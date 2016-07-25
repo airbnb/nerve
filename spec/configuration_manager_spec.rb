@@ -24,7 +24,7 @@ describe Nerve::ConfigurationManager do
       expect(config_manager.config.keys()).to include('instance_id', 'services')
       expect(config_manager.config['services'].keys()).to contain_exactly(
         'your_http_service', 'your_tcp_service', 'rabbitmq_service',
-        'etcd_service1', 'zookeeper_service1'
+        'etcd_service1', 'serf_service1',  'zookeeper_service1'
       )
     end
   end

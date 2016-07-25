@@ -13,8 +13,7 @@ class Nerve::Reporter
       # the name won't just be the name you gave but name_port. this allows a same
       # service to be on multiple ports of a same machine.
 
-      # FIXME: support IPv6?
-      @data        = "#{service['host']}:#{service['port']}"
+      @data = parse_data(get_service_data(service))
       @config_file = File.join(@config_dir,"zzz_nerve_#{@name}.json")
       File.unlink @config_file if File.exists? @config_file
     end
@@ -34,7 +33,9 @@ class Nerve::Reporter
 
     def update_data(new_data='')
       @data = new_data if new_data
-      File.write(@config_file, JSON.generate({tags:{"smart:#{@name}"=>@data}}))
+      data = JSON.parse(@data)
+      tag = "#{data['host']}:#{data['port']}"
+      File.write(@config_file, JSON.generate({tags:{"smart:#{@name}" =>tag}}))
       reload_serf
     end
 
