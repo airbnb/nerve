@@ -6,6 +6,7 @@ class Nerve::Reporter
 
       # Set default parameters - the defaults are sane so nothing needed.
       @config_dir = service['serf_config_dir'] || '/etc/serf'
+      @reload_command = service['reload_command'] || '/usr/bin/killall -HUP serf'
       @name       = service['name']
       # please note that because of
       # https://github.com/airbnb/smartstack-cookbook/blob/master/recipes/nerve.rb#L71
@@ -22,10 +23,10 @@ class Nerve::Reporter
       log.info "nerve: started the maintain the tag #{@name} with Serf"
 
       # Notes on WHY things are done in a certain way. It's not obvious at all
-      # OK so here is the challenge: to persist tags, we write them in the file 
+      # OK so here is the challenge: to persist tags, we write them in the file
       # /etc/serf/zzz_nerve_servicename.json, and reload. Unlike zookeeper, if
       # we stop nerve there is no clearing up of this. So if we delete a service
-      # from a server, then the config file (and the tag in memory if serf isn't 
+      # from a server, then the config file (and the tag in memory if serf isn't
       # restarted) might persist.
       #
       # First I thought, let's just read the config and delete what is not there
@@ -41,7 +42,7 @@ class Nerve::Reporter
       #    in two seconds
       # 2/ after the update, wait another two seconds, and any file older than
       #    three seconds will be wiped.
-      # 
+      #
       # This system assumes that the various threads will have written their
       # files after four seconds - which is kind of reasonnable IMHO
 
@@ -70,13 +71,17 @@ class Nerve::Reporter
 
     def report_down
       File.unlink(@config_file)
-      system("/usr/bin/killall -HUP serf")
+      reload_serf
     end
 
     def update_data(new_data='')
       @data = new_data if new_data
       File.write(@config_file, JSON.generate({tags:{"smart:#{@name}"=>@data}}))
-      system("/usr/bin/killall -HUP serf")
+      reload_serf
+    end
+
+    def reload_serf()
+      system(@reload_command)
     end
 
     def ping?
