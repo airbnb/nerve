@@ -3,8 +3,6 @@
   "port": 3000,
   "reporter_type": "serf",
   "check_interval": 2,
-  "zk_hosts": ["localhost:2181"],
-  "zk_path": "/nerve/services/your_http_service/services",
   "weight": 2,
   "checks": [
     {
