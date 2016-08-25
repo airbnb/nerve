@@ -6,8 +6,8 @@ require 'nerve/version'
 Gem::Specification.new do |gem|
   gem.name          = "nerve"
   gem.version       = Nerve::VERSION
-  gem.authors       = ["Martin Rhoads", "Igor Serebryany", "Pierre Carrier"]
-  gem.email         = ["martin.rhoads@airbnb.com", "igor.serebryany@airbnb.com"]
+  gem.authors       = ["Martin Rhoads", "Igor Serebryany", "Pierre Carrier", "Joseph Lynch"]
+  gem.email         = ["martin.rhoads@airbnb.com", "igor.serebryany@airbnb.com", "jlynch@yelp.com"]
   gem.description   = "Nerve is a service registration daemon. It performs health "\
                       "checks on your service and then publishes success or failure "\
                       "into one of several registries (currently, zookeeper or etcd). "\
