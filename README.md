@@ -59,7 +59,7 @@ Each service that nerve will be monitoring is specified in the `services` hash.
 The key is the name of the service, and the value is a configuration hash telling nerve how to monitor the service.
 The configuration contains the following options:
 
-* `host`: the default host on which to make service checks; you should make this your *public* ip to ensure your service is publically accessible
+* `host`: the default host on which to make service checks; you should make this your *public* ip to ensure your service is publicly accessible
 * `port`: the default port for service checks; nerve will report the `host`:`port` combo via your chosen reporter
 * `reporter_type`: the mechanism used to report up/down information; depending on the reporter you choose, additional parameters may be required. Defaults to `zookeeper`
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
