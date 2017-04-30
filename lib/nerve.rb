@@ -203,7 +203,7 @@ module Nerve
           log.info "nerve: watcher thread #{name} has reported!"
         end
       else
-        log.info "nerve: not launching #{name} due to --check-config option"
+        log.debug "nerve: not launching #{name} due to --check-config option"
       end
     end
 
