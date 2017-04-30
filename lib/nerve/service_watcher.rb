@@ -19,7 +19,7 @@ module Nerve
 
       @name = service['name']
 
-      # configure the reporter, which we use for reporting status to the registry 
+      # configure the reporter, which we use for reporting status to the registry
       @reporter = Reporter.new_from_service(service)
 
       # instantiate the checks for this service

@@ -29,10 +29,20 @@ class Nerve::Reporter
       @@zk_pool_lock.synchronize {
         unless @@zk_pool.has_key?(@zk_connection_string)
           log.info "nerve: creating pooled connection to #{@zk_connection_string}"
-          @@zk_pool[@zk_connection_string] = ZK.new(@zk_connection_string, :timeout => 5)
+          new_connection = ZK.new(@zk_connection_string, :timeout => 5)
+          # If we couldn't connect, then raise an exception so that we can
+          # reap the service watcher that holds this reporter
+          raise "unable to establish connection to #{@zk_connection_string}" unless new_connection.connected?
+
+          @@zk_pool[@zk_connection_string] = new_connection
           @@zk_pool_count[@zk_connection_string] = 1
           log.info "nerve: successfully created zk connection to #{@zk_connection_string}"
         else
+          unless  @@zk_pool[@zk_connection_string].connected?
+            log.warn "nerve: refusing to re-use a dead connection"
+            raise "disconnected shared connection to #{@zk_connection_string}"
+          end
+
           @@zk_pool_count[@zk_connection_string] += 1
           log.info "nerve: re-using existing zookeeper connection to #{@zk_connection_string}"
         end
@@ -66,6 +76,10 @@ class Nerve::Reporter
     end
 
     def report_down
+      # We need to touch zookeeper in the report_down method in case
+      # we have a bad connection to zookeeper. We have to throw exceptions
+      # to get cleaned up. This exists line serves no other purpose
+      @zk.exists?('/')
       zk_delete
     end
 

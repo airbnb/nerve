@@ -135,6 +135,8 @@ module Nerve
             end
           end
 
+          # We reap all the watchers first before launching new ones so
+          # that we can cleanup bad shared connections
           relaunch.each do |name|
             begin
               log.warn "nerve: watcher #{name} not alive; reaping and relaunching"
@@ -142,6 +144,9 @@ module Nerve
             rescue => e
               log.warn "nerve: could not reap #{name}, got #{e.inspect}"
             end
+          end
+
+          relaunch.each do |name|
             launch_watcher(name, @watchers_desired[name])
           end
 
