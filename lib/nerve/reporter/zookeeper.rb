@@ -83,7 +83,7 @@ class Nerve::Reporter
     end
 
     def zk_create
-      @zk.mkdir_p(@zk_path)
+      @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
       @full_key = @zk.create(@key_prefix, :data => @data, :mode => :ephemeral_sequential)
     end
 
