@@ -8,7 +8,7 @@ module Nerve
       type = service['reporter_type'] || 'zookeeper'
       reporter = begin
         require "nerve/reporter/#{type.downcase}"
-        self.const_get(type.downcase.capitalize)
+        self.const_get(type.split('_').collect(&:capitalize).join)
       rescue Exception => e
         raise ArgumentError, "specified a reporter_type of #{type}, which could not be found: #{e}"
       end

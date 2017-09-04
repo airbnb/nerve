@@ -1,0 +1,35 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: http://localhost:8080/exhibitor/v1/cluster/list
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - '*/*'
+      - application/json
+      User-Agent:
+      - Ruby
+      Host:
+      - localhost:8080
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+      Transfer-Encoding:
+      - chunked
+      Server:
+      - Jetty(1.0)
+    body:
+      encoding: UTF-8
+      string: '{"servers":["f53aeace1b62"],"port":2181}'
+    http_version: 
+  recorded_at: Wed, 10 Jun 2015 09:34:53 GMT
+recorded_with: VCR 2.9.3
