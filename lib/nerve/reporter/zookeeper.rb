@@ -5,6 +5,8 @@ require 'zk'
 
 class Nerve::Reporter
   class Zookeeper < Base
+    ZK_CONNECTION_ERRORS = [ZK::Exceptions::OperationTimeOut, ZK::Exceptions::ConnectionLoss]
+
     @@zk_pool = {}
     @@zk_pool_count = {}
     @@zk_pool_lock = Mutex.new
@@ -66,15 +68,57 @@ class Nerve::Reporter
     end
 
     def report_up()
-      zk_save
+      if not @zk.connected?
+        log.error "nerve: error in reporting up on zk node #{@full_key}: loss connection"
+      else
+        begin
+          zk_save
+        rescue *ZK_CONNECTION_ERRORS => e
+          statsd.increment(
+            'nerve.reporter.zk.connection_error',
+            tags: ["zk_cluster:#{@zk_cluster}", "operation:report_up"]
+          )
+          log.error "nerve: error in reporting up on zk node #{@full_key}: #{e.message}"
+        end
+      end
     end
 
     def report_down
-      zk_delete
+      if not @zk.connected?
+        log.error "nerve: error in reporting down on zk node #{@full_key}: loss connection"
+      else
+        begin
+          zk_delete
+        rescue *ZK_CONNECTION_ERRORS => e
+          statsd.increment(
+            'nerve.reporter.zk.connection_error',
+            tags: ["zk_cluster:#{@zk_cluster}", "operation:report_down"]
+          )
+          log.error "nerve: error in reporting down on zk node #{@full_key}: #{e.message}"
+        end
+      end
     end
 
     def ping?
-      return @zk.connected? && @zk.exists?(@full_key || '/')
+      if not @zk.connected?
+        log.error "nerve: error in ping reporter at zk node #{@full_key}: loss connection"
+        statsd.increment(
+          'nerve.reporter.zk.connection_error',
+          tags: ["zk_cluster:#{@zk_cluster}", "operation:ping"]
+        )
+        return false
+      else
+        begin
+          return @zk.exists?(@full_key || '/')
+        rescue *ZK_CONNECTION_ERRORS => e
+          statsd.increment(
+            'nerve.reporter.zk.connection_error',
+            tags: ["zk_cluster:#{@zk_cluster}", "operation:ping"]
+          )
+          log.error "nerve: error in ping reporter at zk node #{@full_key}: #{e.message}"
+          return false
+        end
+      end
     end
 
     private
