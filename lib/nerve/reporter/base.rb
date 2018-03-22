@@ -3,6 +3,7 @@ class Nerve::Reporter
   class Base
     include Nerve::Utils
     include Nerve::Logging
+    include Nerve::StatsD
 
     def initialize(opts)
     end

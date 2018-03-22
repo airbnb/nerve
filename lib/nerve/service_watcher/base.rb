@@ -6,6 +6,8 @@ module Nerve
       include Utils
       include Logging
 
+      attr_reader :name
+
       def initialize(opts={})
         @timeout = opts['timeout'] ? opts['timeout'].to_f : 0.1
         @rise    = opts['rise']    ? opts['rise'].to_i    : 1

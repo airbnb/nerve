@@ -6,6 +6,7 @@ module Nerve
   class ServiceWatcher
     include Utils
     include Logging
+    include StatsD
 
     attr_reader :was_up
 
@@ -95,6 +96,7 @@ module Nerve
 
     def run()
       log.info "nerve: starting service watch #{@name}"
+      statsd.increment('nerve.watcher.start', tags: ["service_name:#{@name}"])
       @reporter.start()
 
       until watcher_should_exit?
@@ -105,7 +107,10 @@ module Nerve
         # so that nerve can exit promptly if required
         responsive_sleep (@check_interval) { watcher_should_exit? }
       end
+
+      statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:clean', 'stop_location:main_loop', "service_name:#{@name}"])
     rescue StandardError => e
+      statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:abort', 'stop_location:main_loop', "service_name:#{@name}"])
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
       raise e
     ensure
@@ -114,7 +119,9 @@ module Nerve
     end
 
     def check_and_report
-      if !@reporter.ping?
+      alive = @reporter.ping?
+      statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:#{alive ? "success" : "fail"}", "service_name:#{@name}"])
+      if !alive
         # If the reporter can't ping, then we do not know the status
         # and must force a new report.
         @was_up = nil
@@ -125,6 +132,7 @@ module Nerve
       log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
 
       if is_up != @was_up
+        statsd.increment('nerve.watcher.status.transition', tags: ["new_status:#{is_up ? "up" : "down"}", "service_name:#{@name}"])
         if is_up
           @reporter.report_up
           log.info "nerve: service #{@name} is now up"
@@ -138,7 +146,9 @@ module Nerve
 
     def check?
       @service_checks.each do |check|
-        return false unless check.up?
+        up = check.up?
+        statsd.increment('nerve.watcher.status.service_check', tags: ["check_result:#{up ? "up" : "down"}", "service_name:#{@name}", "check_name:#{check.name}"])
+        return false unless up
       end
       return true
     end
