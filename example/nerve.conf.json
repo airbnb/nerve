@@ -1,6 +1,10 @@
 {
   "instance_id": "mymachine",
   "service_conf_dir": "example/nerve_services",
+  "statsd": {
+    "host": "localhost",
+    "port": 8125
+  },
   "services": {
     "your_http_service": {
       "host": "1.2.3.4",

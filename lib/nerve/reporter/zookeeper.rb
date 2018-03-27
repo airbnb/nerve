@@ -14,7 +14,9 @@ class Nerve::Reporter
         raise ArgumentError, "missing required argument #{required} for new service watcher" unless service[required]
       end
       # Since we pool we get one connection per zookeeper cluster
-      @zk_connection_string = service['zk_hosts'].sort.join(',')
+      zk_host_list = service['zk_hosts'].sort
+      @zk_cluster = host_list_to_cluster(zk_host_list)
+      @zk_connection_string = zk_host_list.join(',')
       @data = parse_data(get_service_data(service))
 
       @zk_path = service['zk_path']
@@ -23,7 +25,7 @@ class Nerve::Reporter
     end
 
     def start()
-      log.info "nerve: waiting to connect to zookeeper to #{@zk_connection_string}"
+      log.info "nerve: waiting to connect to zookeeper cluster #{@zk_cluster} hosts #{@zk_connection_string}"
       # Ensure that all Zookeeper reporters re-use a single zookeeper
       # connection to any given set of zk hosts.
       @@zk_pool_lock.synchronize {
@@ -32,9 +34,11 @@ class Nerve::Reporter
           @@zk_pool[@zk_connection_string] = ZK.new(@zk_connection_string, :timeout => 5)
           @@zk_pool_count[@zk_connection_string] = 1
           log.info "nerve: successfully created zk connection to #{@zk_connection_string}"
+          statsd.increment('nerve.reporter.zk.client.created', tags: ["zk_cluster:#{@zk_cluster}"])
         else
           @@zk_pool_count[@zk_connection_string] += 1
           log.info "nerve: re-using existing zookeeper connection to #{@zk_connection_string}"
+          statsd.increment('nerve.reporter.zk.client.reused', tags: ["zk_cluster:#{@zk_cluster}"])
         end
         @zk = @@zk_pool[@zk_connection_string]
         log.info "nerve: retrieved zk connection to #{@zk_connection_string}"
@@ -75,24 +79,39 @@ class Nerve::Reporter
 
     private
 
+    def host_list_to_cluster(list)
+      first_host = list.sort.first
+      first_token = first_host.split('.').first
+      # extract cluster name by filtering name of first host
+      # remove domain extents and trailing numbers
+      last_non_number = first_token.rindex(/[^0-9]/)
+      last_non_number ? first_token[0..last_non_number] : first_host
+    end
+
     def zk_delete
       if @full_key
-        @zk.delete(@full_key, :ignore => :no_node)
+        statsd.time('nerve.reporter.zk.delete.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}"]) do
+          @zk.delete(@full_key, :ignore => :no_node)
+        end
         @full_key = nil
       end
     end
 
     def zk_create
       # only mkdir_p if the path does not exist
-      @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
-      @full_key = @zk.create(@key_prefix, :data => @data, :mode => :ephemeral_sequential)
+      statsd.time('nerve.reporter.zk.create.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"]) do
+        @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
+        @full_key = @zk.create(@key_prefix, :data => @data, :mode => :ephemeral_sequential)
+      end
     end
 
     def zk_save
       return zk_create unless @full_key
 
       begin
-        @zk.set(@full_key, @data)
+        statsd.time('nerve.reporter.zk.save.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}"]) do
+          @zk.set(@full_key, @data)
+        end
       rescue ZK::Exceptions::NoNode
         zk_create
       end
