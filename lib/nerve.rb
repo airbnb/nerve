@@ -51,7 +51,7 @@ module Nerve
 
       log.debug 'nerve: completed init'
     rescue Exception => e
-      statsd && statsd.increment('nerve.stop', tags: ['stop_avenue:abort', 'stop_location:init'])
+      statsd && statsd.increment('nerve.stop', tags: ['stop_avenue:abort', 'stop_location:init', "exception_name:#{e.class.name}", "exception_message:#{e.message}"])
       raise e
     end
 
@@ -159,7 +159,7 @@ module Nerve
                 reap_watcher(name)
               rescue => e
                 log.warn "nerve: could not reap #{name}, got #{e.inspect}"
-                statsd.increment('nerve.watcher.reap', tags: ['reap_reason:relaunch', 'reap_result:fail', "watcher_name:#{name}"])
+                statsd.increment('nerve.watcher.reap', tags: ['reap_reason:relaunch', 'reap_result:fail', "watcher_name:#{name}", "exception_name:#{e.class.name}", "exception_message:#{e.message}"])
               end
               statsd.increment('nerve.watcher.launch', tags: ['launch_reason:relaunch', "watcher_name:#{name}"])
               launch_watcher(name, @watchers_desired[name])
@@ -172,7 +172,7 @@ module Nerve
           end
         rescue => e
           log.error "nerve: encountered unexpected exception #{e.inspect} in main thread"
-          statsd.increment('nerve.stop', tags: ['stop_avenue:abort', 'stop_location:main_loop'])
+          statsd.increment('nerve.stop', tags: ['stop_avenue:abort', 'stop_location:main_loop', "exception_name:#{e.class.name}", "exception_message:#{e.message}"])
           raise e
         ensure
           $EXIT = true

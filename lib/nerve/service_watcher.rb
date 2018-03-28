@@ -110,7 +110,7 @@ module Nerve
 
       statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:clean', 'stop_location:main_loop', "service_name:#{@name}"])
     rescue StandardError => e
-      statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:abort', 'stop_location:main_loop', "service_name:#{@name}"])
+      statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:abort', 'stop_location:main_loop', "service_name:#{@name}", "exception_name:#{e.class.name}", "exception_message:#{e.message}"])
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
       raise e
     ensure
