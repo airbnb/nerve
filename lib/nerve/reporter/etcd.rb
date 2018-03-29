@@ -28,10 +28,14 @@ class Nerve::Reporter
 
     def report_up()
       etcd_save
+      # assume report up is successful if no error
+      return true
     end
 
     def report_down
       etcd_delete
+      # assume report down is successful if no error
+      return true
     end
 
     def ping?

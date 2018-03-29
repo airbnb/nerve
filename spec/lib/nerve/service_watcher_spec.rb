@@ -30,22 +30,38 @@ describe Nerve::ServiceWatcher do
 
     it 'reports the service as down when the checks fail' do
       expect(service_watcher).to receive(:check?).and_return(false)
-      expect(reporter).to receive(:report_down)
-      service_watcher.check_and_report
+      expect(reporter).to receive(:report_down).and_return(true)
+      expect(service_watcher.check_and_report).to be true
     end
 
     it 'reports the service as up when the checks succeed' do
       expect(service_watcher).to receive(:check?).and_return(true)
-      expect(reporter).to receive(:report_up)
-      service_watcher.check_and_report
+      expect(reporter).to receive(:report_up).and_return(true)
+      expect(service_watcher.check_and_report).to be true
     end
 
     it 'doesn\'t report if the status hasn\'t changed' do
       expect(service_watcher).to receive(:check?).and_return(true)
+      service_watcher.instance_variable_set(:@was_up, true)
 
-      expect(reporter).to receive(:report_up).once
+      expect(reporter).to receive(:ping?).and_return(true)
+      expect(reporter).not_to receive(:report_up)
       expect(reporter).not_to receive(:report_down)
-      service_watcher.check_and_report
+      expect(service_watcher.check_and_report).to be true
+    end
+
+    context "when reporter failed to report up/down" do
+      it 'returns false when report down' do
+        expect(service_watcher).to receive(:check?).and_return(false)
+        expect(reporter).to receive(:report_down).and_return(false)
+        expect(service_watcher.check_and_report).to be false
+      end
+
+      it 'returns false when report up' do
+        expect(service_watcher).to receive(:check?).and_return(true)
+        expect(reporter).to receive(:report_up).and_return(false)
+        expect(service_watcher.check_and_report).to be false
+      end
     end
   end
 
@@ -83,6 +99,30 @@ describe Nerve::ServiceWatcher do
         end
 
         expect{ Timeout::timeout(1) { service_watcher.run() } }.not_to raise_error
+      end
+    end
+
+    context 'when check and report has repeated failures' do
+      it 'quits the loop after eaching the max number of repeated failures' do
+        # default max repeated failure is 10
+        expect(service_watcher).to receive(:check_and_report).exactly(10).times.and_return(false)
+        service_watcher.run()
+        expect(service_watcher.alive?).to be false
+      end
+
+      it 'continues the loop if not reaching max number of repeated failures' do
+        # default max repeated failure is 10
+        count = 0
+
+        expect(service_watcher).to receive(:check_and_report).exactly(101).times do
+          $EXIT = true if count == 100
+          count += 1
+          # so that check_and_report returns 9 false followed by 1 true and repeats the sequence
+          count % 10 == 9
+        end
+
+        service_watcher.run()
+        expect(service_watcher.alive?).to be false
       end
     end
   end

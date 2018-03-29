@@ -1,6 +1,7 @@
 {
   "instance_id": "mymachine",
   "service_conf_dir": "example/nerve_services",
+  "max_repeated_report_failures": 10,
   "statsd": {
     "host": "localhost",
     "port": 8125
