@@ -90,41 +90,47 @@ describe Nerve::Reporter::Zookeeper do
     end
 
     context "when there is a short disconnection" do
-      before(:each) do
+      it 'returns false on ping?' do
         # this condition is triggered if connection is shortly interrupted
         # so connected? still return true
         expect(zk).to receive(:exists?).and_raise(ZK::Exceptions::OperationTimeOut)
-      end
-
-      it 'returns false on ping?' do
         expect(@reporter.ping?).to be false
       end
 
       it 'swallows zk connetion errors and returns false on report_up' do
+        # this condition is triggered if connection is shortly interrupted
+        # so connected? still return true
+        expect(zk).to receive(:set).and_raise(ZK::Exceptions::OperationTimeOut)
         expect(@reporter.report_up).to be false
       end
 
       it 'swallows zk connetion errors and returns false on report_down' do
+        # this condition is triggered if connection is shortly interrupted
+        # so connected? still return true
+        expect(zk).to receive(:delete).and_raise(ZK::Exceptions::OperationTimeOut)
         expect(@reporter.report_down).to be false
       end
     end
 
     context "when there is other ZK errors" do
-      before(:each) do
+      it 'raises zk non-connection error on ping?' do
         # this condition is triggered if connection is shortly interrupted
         # so connected? still return true
         expect(zk).to receive(:exists?).and_raise(ZK::Exceptions::SessionExpired)
-      end
-
-      it 'raises zk non-connection error on ping?' do
         expect {@reporter.ping?}.to raise_error(ZK::Exceptions::SessionExpired)
       end
 
       it 'raises zk non-connetion errors on report_up' do
+        # this condition is triggered if connection is shortly interrupted
+        # so connected? still return true
+        expect(zk).to receive(:set).and_raise(ZK::Exceptions::SessionExpired)
         expect {@reporter.report_up}.to raise_error(ZK::Exceptions::SessionExpired)
       end
 
       it 'raises zk non-connetion errors on report_down' do
+        # this condition is triggered if connection is shortly interrupted
+        # so connected? still return true
+        expect(zk).to receive(:delete).and_raise(ZK::Exceptions::SessionExpired)
         expect {@reporter.report_down}.to raise_error(ZK::Exceptions::SessionExpired)
       end
     end
