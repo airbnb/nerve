@@ -65,6 +65,8 @@ module Nerve
       @run_thread = nil
       @should_finish = false
 
+      @max_repeated_report_failures = service['max_repeated_report_failures'] || 10
+
       log.debug "nerve: created service watcher for #{@name} with #{@service_checks.size} checks"
     end
 
@@ -97,10 +99,18 @@ module Nerve
     def run()
       log.info "nerve: starting service watch #{@name}"
       statsd.increment('nerve.watcher.start', tags: ["service_name:#{@name}"])
+
       @reporter.start()
 
-      until watcher_should_exit?
-        check_and_report
+      repeated_report_failures = 0
+      until watcher_should_exit? || repeated_report_failures >= @max_repeated_report_failures
+        report_succeeded = check_and_report
+
+        if report_succeeded
+          repeated_report_failures = 0
+        else
+          repeated_report_failures += 1
+        end
 
         # wait to run more checks but make sure to exit if $EXIT
         # we avoid sleeping for the entire check interval at once
@@ -108,7 +118,11 @@ module Nerve
         responsive_sleep (@check_interval) { watcher_should_exit? }
       end
 
-      statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:clean', 'stop_location:main_loop', "service_name:#{@name}"])
+      if repeated_report_failures >= @max_repeated_report_failures
+        statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:failure', 'stop_location:main_loop', "service_name:#{@name}"])
+      else
+        statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:clean', 'stop_location:main_loop', "service_name:#{@name}"])
+      end
     rescue StandardError => e
       statsd.increment('nerve.watcher.stop', tags: ['stop_avenue:abort', 'stop_location:main_loop', "service_name:#{@name}", "exception_name:#{e.class.name}", "exception_message:#{e.message}"])
       log.error "nerve: error in service watcher #{@name}: #{e.inspect}"
@@ -131,17 +145,34 @@ module Nerve
       is_up = check?
       log.debug "nerve: current service status for #{@name} is #{is_up.inspect}"
 
+      report_succeeded = true
       if is_up != @was_up
-        statsd.increment('nerve.watcher.status.transition', tags: ["new_status:#{is_up ? "up" : "down"}", "service_name:#{@name}"])
         if is_up
-          @reporter.report_up
-          log.info "nerve: service #{@name} is now up"
+          report_succeeded = @reporter.report_up
+          if report_succeeded
+            log.info "nerve: service #{@name} is now up"
+          else
+            log.warn "nerve: service #{@name} failed to report up"
+          end
         else
-          @reporter.report_down
-          log.warn "nerve: service #{@name} is now down"
+          report_succeeded = @reporter.report_down
+          if report_succeeded
+            log.warn "nerve: service #{@name} is now down"
+          else
+            log.warn "nerve: service #{@name} failed to report down"
+          end
         end
         @was_up = is_up
+
+        if report_succeeded
+          statsd.increment('nerve.watcher.status.transition', tags: ["new_status:#{is_up ? "up" : "down"}", "service_name:#{@name}"])
+          statsd.increment('nerve.watcher.status.report.count', tags: ["report_result:success", "service_name:#{@name}"])
+        else
+          statsd.increment('nerve.watcher.status.report.count', tags: ["report_result:fail", "service_name:#{@name}"])
+        end
       end
+
+      return report_succeeded
     end
 
     def check?

@@ -68,6 +68,7 @@ module Nerve
       end
       @instance_id = config['instance_id']
       @watchers_desired = config['services']
+      @max_repeated_report_failures = config['max_repeated_report_failures']
       @heartbeat_path = config['heartbeat_path']
       StatsD.configure_statsd(config["statsd"] || {})
       statsd.increment('nerve.config.update')
@@ -199,7 +200,13 @@ module Nerve
     def merged_config(config, name)
       # Get a deep copy so sub-hashes are properly handled
       deep_copy = Marshal.load(Marshal.dump(config))
-      return deep_copy.merge({'instance_id' => @instance_id, 'name' => name})
+      return deep_copy.merge(
+        {
+          'instance_id' => @instance_id,
+          'name' => name,
+          'max_repeated_report_failures' => @max_repeated_report_failures,
+        }
+      )
     end
 
     def launch_watcher(name, config, opts = {})
