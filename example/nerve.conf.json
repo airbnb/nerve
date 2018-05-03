@@ -54,6 +54,21 @@
           "password": "guest"
         }
       ]
+    },
+    "mysql_service": {
+      "port": 3306,
+      "host": "127.0.0.1",
+      "zk_hosts": ["localhost:2181"],
+      "zk_path": "/nerve/services/your_mysql_service/services",
+      "check_interval": 2,
+      "checks": [
+        {
+          "type": "mysql",
+          "dbname": "dbname",
+          "user": "guest",
+          "password": "guest"
+        }
+      ]
     }
   }
 }
