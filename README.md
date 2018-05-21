@@ -41,6 +41,13 @@ permissions. You can also install via bundler, but keep in mind you'll pick up
 Nerve's version of library dependencies and possibly not the ones you need
 for your infra/apps.
 
+You can now run the nerve binary like:
+
+```bash
+export GEM_PATH=/opt/smartstack/nerve
+/opt/smartstack/nerve/bin/nerve --help
+```
+
 ## Configuration ##
 
 Nerve depends on a single configuration file, in json format.
