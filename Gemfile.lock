@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    nerve (0.8.3)
+    nerve (0.8.4)
       bunny (= 1.1.0)
       dogstatsd-ruby (~> 3.3.0)
       etcd (~> 0.2.3)
