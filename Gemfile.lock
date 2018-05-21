@@ -1,11 +1,12 @@
 PATH
   remote: .
   specs:
-    nerve (0.8.3)
+    nerve (0.8.4)
       bunny (= 1.1.0)
       dogstatsd-ruby (~> 3.3.0)
       etcd (~> 0.2.3)
       json
+      redis (= 3.3.5)
       zk (~> 1.9.2)
 
 GEM
@@ -37,6 +38,7 @@ GEM
       method_source (~> 0.8.1)
       slop (~> 3.4)
     rake (10.1.1)
+    redis (3.3.5)
     rspec (3.1.0)
       rspec-core (~> 3.1.0)
       rspec-expectations (~> 3.1.0)
