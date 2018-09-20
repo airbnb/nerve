@@ -12,7 +12,7 @@ The combination of Nerve and [Synapse](https://github.com/airbnb/synapse) make s
 We already use [Synapse](https://github.com/airbnb/synapse) to discover remote services.
 However, those services needed boilerplate code to register themselves in [Zookeeper](http://zookeeper.apache.org/).
 Nerve simplifies underlying services, enables code reuse, and allows us to create a more composable system.
-It does so by factoring out the boilerplate into it's own application, which independenly handles monitoring and reporting.
+It does so by factoring out the boilerplate into it's own application, which independently handles monitoring and reporting.
 
 Beyond those benefits, nerve also acts as a general watchdog on systems.
 The information it reports can be used to take action from a centralized automation center: action like scaling distributed systems up or down or alerting ops or engineering about downtime.
