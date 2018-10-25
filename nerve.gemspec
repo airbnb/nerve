@@ -27,6 +27,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "redis", "= 3.3.5"
   gem.add_runtime_dependency "etcd", "~> 0.2.3"
   gem.add_runtime_dependency "dogstatsd-ruby", "~> 3.3.0"
+  gem.add_runtime_dependency "activesupport", '~> 4.2', ">= 4.2.2"
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "rspec", "~> 3.1.0"
