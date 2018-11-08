@@ -23,43 +23,60 @@ describe Nerve::ServiceWatcher do
     let(:service_watcher) { Nerve::ServiceWatcher.new(build(:service)) }
     let(:reporter) { service_watcher.instance_variable_get(:@reporter) }
 
-    it 'pings the reporter' do
-      expect(reporter).to receive(:ping?)
-      service_watcher.check_and_report
-    end
-
-    it 'reports the service as down when the checks fail' do
-      expect(service_watcher).to receive(:check?).and_return(false)
-      expect(reporter).to receive(:report_down).and_return(true)
-      expect(service_watcher.check_and_report).to be true
-    end
-
-    it 'reports the service as up when the checks succeed' do
-      expect(service_watcher).to receive(:check?).and_return(true)
-      expect(reporter).to receive(:report_up).and_return(true)
-      expect(service_watcher.check_and_report).to be true
-    end
-
-    it 'doesn\'t report if the status hasn\'t changed' do
-      expect(service_watcher).to receive(:check?).and_return(true)
-      service_watcher.instance_variable_set(:@was_up, true)
-
-      expect(reporter).to receive(:ping?).and_return(true)
-      expect(reporter).not_to receive(:report_up)
-      expect(reporter).not_to receive(:report_down)
-      expect(service_watcher.check_and_report).to be true
-    end
-
-    context "when reporter failed to report up/down" do
-      it 'returns false when report down' do
-        expect(service_watcher).to receive(:check?).and_return(false)
-        expect(reporter).to receive(:report_down).and_return(false)
-        expect(service_watcher.check_and_report).to be false
+    context 'when pinging of reporter succeeds' do
+      it 'pings the reporter' do
+        expect(reporter).to receive(:ping?).and_return(true)
+        service_watcher.check_and_report
       end
 
-      it 'returns false when report up' do
+      it 'reports the service as down when the checks fail' do
+        expect(reporter).to receive(:ping?).and_return(true)
+        expect(service_watcher).to receive(:check?).and_return(false)
+        expect(reporter).to receive(:report_down).and_return(true)
+        expect(service_watcher.check_and_report).to be true
+      end
+
+      it 'reports the service as up when the checks succeed' do
+        expect(reporter).to receive(:ping?).and_return(true)
         expect(service_watcher).to receive(:check?).and_return(true)
-        expect(reporter).to receive(:report_up).and_return(false)
+        expect(reporter).to receive(:report_up).and_return(true)
+        expect(service_watcher.check_and_report).to be true
+      end
+      
+      context "when reporter failed to report up/down" do
+        it 'returns false when report down' do
+          expect(reporter).to receive(:ping?).and_return(true)
+          expect(service_watcher).to receive(:check?).and_return(false)
+          expect(reporter).to receive(:report_down).and_return(false)
+          expect(service_watcher.check_and_report).to be false
+        end
+
+        it 'returns false when report up' do
+          expect(reporter).to receive(:ping?).and_return(true)
+          expect(service_watcher).to receive(:check?).and_return(true)
+          expect(reporter).to receive(:report_up).and_return(false)
+          expect(service_watcher.check_and_report).to be false
+        end
+      end
+
+      it 'doesn\'t report if the status hasn\'t changed' do
+        expect(reporter).to receive(:ping?).and_return(true)
+        expect(service_watcher).to receive(:check?).and_return(true)
+        service_watcher.instance_variable_set(:@was_up, true)
+
+        expect(reporter).not_to receive(:report_up)
+        expect(reporter).not_to receive(:report_down)
+        expect(service_watcher.check_and_report).to be true
+      end
+    end
+
+
+    context 'when pinging of reporter fails' do
+      it 'doesn\'t try to report' do
+        expect(reporter).to receive(:ping?).and_return(false)
+        expect(reporter).not_to receive(:report_up)
+        expect(reporter).not_to receive(:report_down)
+
         expect(service_watcher.check_and_report).to be false
       end
     end
