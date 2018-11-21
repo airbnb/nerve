@@ -134,13 +134,15 @@ module Nerve
     end
 
     def check_and_report
-      alive = @reporter.ping?
-      statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:#{alive ? "success" : "fail"}", "service_name:#{@name}"])
-      if !alive
-        # If the reporter can't ping, then we do not know the status
-        # and must force a new report.
+      if !@reporter.ping?
+        statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:fail", "service_name:#{@name}"])
+
+        # If the reporter can't ping, then we do not know the status and must force a new report.
+        # We will also skip checking service status since it couldn't be reported
         @was_up = nil
+        return false
       end
+      statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:success", "service_name:#{@name}"])
 
       # what is the status of the service?
       is_up = check?
