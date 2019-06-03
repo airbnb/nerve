@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'nerve/reporter/zookeeper'
+require 'zookeeper'
 
 describe Nerve::Reporter::Zookeeper do
   let(:subject) { {
@@ -110,6 +111,21 @@ describe Nerve::Reporter::Zookeeper do
         expect(zk).to receive(:delete).and_raise(ZK::Exceptions::OperationTimeOut)
         expect(@reporter.report_down).to be false
       end
+
+      it 'swallows zookeeper not connected errors and returns false on report_up' do
+        # this condition is triggered if connection is shortly interrupted
+        # so connected? still return true
+        expect(zk).to receive(:set).and_raise(::Zookeeper::Exceptions::NotConnected)
+        expect(@reporter.report_up).to be false
+      end
+
+      it 'swallows zookeeper not connected errors and returns false on report_down' do
+        # this condition is triggered if connection is shortly interrupted
+        # so connected? still return true
+        expect(zk).to receive(:delete).and_raise(::Zookeeper::Exceptions::NotConnected)
+        expect(@reporter.report_down).to be false
+      end
+
     end
 
     context "when there is other ZK errors" do

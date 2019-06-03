@@ -1,11 +1,11 @@
 require 'nerve/reporter/base'
 require 'thread'
 require 'zk'
-
+require 'zookeeper'
 
 class Nerve::Reporter
   class Zookeeper < Base
-    ZK_CONNECTION_ERRORS = [ZK::Exceptions::OperationTimeOut, ZK::Exceptions::ConnectionLoss]
+    ZK_CONNECTION_ERRORS = [ZK::Exceptions::OperationTimeOut, ZK::Exceptions::ConnectionLoss, ::Zookeeper::Exceptions::NotConnected]
 
     @@zk_pool = {}
     @@zk_pool_count = {}
