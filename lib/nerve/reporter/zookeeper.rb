@@ -22,7 +22,7 @@ class Nerve::Reporter
       @data = parse_data(get_service_data(service))
 
       @zk_path = service['zk_path']
-      @key_prefix = @zk_path + "/#{service['instance_id']}_"
+      @key_prefix = @zk_path + get_key(service)
       @full_key = nil
     end
 
@@ -122,6 +122,18 @@ class Nerve::Reporter
       # remove domain extents and trailing numbers
       last_non_number = first_token.rindex(/[^0-9]/)
       last_non_number ? first_token[0..last_non_number] : first_host
+    end
+
+    def get_key(service)
+      if service.has_key?('use_path_encoding') && service['use_path_encoding'] == true
+        key = "/#{service['host']}_#{service['port']}_"
+        if service.has_key?('labels') && service['labels'].has_key?('az')
+          key += "#{service['labels']['az']}_"
+        end
+        key
+      else
+        "/#{service['instance_id']}_"
+      end
     end
 
     def zk_delete

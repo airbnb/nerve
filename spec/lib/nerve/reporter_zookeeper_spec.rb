@@ -150,6 +150,39 @@ describe Nerve::Reporter::Zookeeper do
         expect {@reporter.report_down}.to raise_error(ZK::Exceptions::SessionExpired)
       end
     end
+
+    context "reporter path encoding" do
+      it 'get key with az' do
+        service = {
+          'use_path_encoding' => true,
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'labels' => {
+            'az' => 'us-east-1a'
+          }
+        }
+        expect(@reporter.send(:get_key, service)).to eq('/127.0.0.1_3000_us-east-1a_')
+      end
+
+      it 'get key without az' do
+        service = {
+          'use_path_encoding' => true,
+          'host' => '127.0.0.1',
+          'port' => 3000
+        }
+        expect(@reporter.send(:get_key, service)).to eq('/127.0.0.1_3000_')
+      end
+
+      it 'get key with instance name' do
+        service = {
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'instance_id' => 'i-0f93010ac7d8016ef'
+        }
+        expect(@reporter.send(:get_key, service)).to eq('/i-0f93010ac7d8016ef_')
+      end
+
+    end
   end
 end
 
