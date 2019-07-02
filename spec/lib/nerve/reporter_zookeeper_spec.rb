@@ -161,7 +161,13 @@ describe Nerve::Reporter::Zookeeper do
             'az' => 'us-east-1a'
           }
         }
-        expect(@reporter.send(:get_key, service)).to eq('/127.0.0.1_3000_us-east-1a_')
+        expected = {
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'az' => 'us-east-1a'
+        }
+        str = @reporter.send(:get_key, service)
+        JSON.parse(Base64.decode64(str[1...-1])).should == expected
       end
 
       it 'get key without az' do
@@ -170,7 +176,13 @@ describe Nerve::Reporter::Zookeeper do
           'host' => '127.0.0.1',
           'port' => 3000
         }
-        expect(@reporter.send(:get_key, service)).to eq('/127.0.0.1_3000_')
+        expected = {
+          'host' => '127.0.0.1',
+          'port' => 3000
+        }
+
+        str = @reporter.send(:get_key, service)
+        JSON.parse(Base64.decode64(str[1...-1])).should == expected
       end
 
       it 'get key with instance name' do

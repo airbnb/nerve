@@ -2,6 +2,7 @@ require 'nerve/reporter/base'
 require 'thread'
 require 'zk'
 require 'zookeeper'
+require "base64"
 
 class Nerve::Reporter
   class Zookeeper < Base
@@ -126,11 +127,14 @@ class Nerve::Reporter
 
     def get_key(service)
       if service.has_key?('use_path_encoding') && service['use_path_encoding'] == true
-        key = "/#{service['host']}_#{service['port']}_"
+        obj = {
+          'host' => service['host'],
+          'port' => service['port']
+        }
         if service.has_key?('labels') && service['labels'].has_key?('az')
-          key += "#{service['labels']['az']}_"
+          obj['az'] = service['labels']['az']
         end
-        key
+        '/' + Base64.encode64(JSON(obj)) + '_'
       else
         "/#{service['instance_id']}_"
       end
