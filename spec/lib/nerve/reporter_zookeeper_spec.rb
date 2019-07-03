@@ -164,7 +164,9 @@ describe Nerve::Reporter::Zookeeper do
         expected = {
           'host' => '127.0.0.1',
           'port' => 3000,
-          'az' => 'us-east-1a'
+          'labels' => {
+            'az' => 'us-east-1a'
+          }
         }
         str = @reporter.send(:get_key, service)
         JSON.parse(Base64.urlsafe_decode64(str[1...-1])).should == expected
