@@ -63,6 +63,7 @@ The configuration contains the following options:
 * `port`: the default port for service checks; nerve will report the `host`:`port` combo via your chosen reporter
 * `reporter_type`: the mechanism used to report up/down information; depending on the reporter you choose, additional parameters may be required. Defaults to `zookeeper`
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
+* `check_mocked`: whether or not health check is mocked, the host check always returns healthy and report up when the value is true
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
 * `weight` (optional): a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
 * `haproxy_server_options` (optional): a string containing any special haproxy server options for this service instance. For example if you wanted to set a service instance as a backup.

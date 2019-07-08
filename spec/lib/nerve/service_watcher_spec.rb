@@ -20,8 +20,9 @@ describe Nerve::ServiceWatcher do
   end
 
   describe 'check_and_report' do
-    let(:service_watcher) { Nerve::ServiceWatcher.new(build(:service)) }
+    let(:service_watcher) { Nerve::ServiceWatcher.new(build(:service, :check_mocked => check_mocked)) }
     let(:reporter) { service_watcher.instance_variable_get(:@reporter) }
+    let(:check_mocked) { false }
 
     context 'when pinging of reporter succeeds' do
       it 'pings the reporter' do
@@ -42,7 +43,7 @@ describe Nerve::ServiceWatcher do
         expect(reporter).to receive(:report_up).and_return(true)
         expect(service_watcher.check_and_report).to be true
       end
-      
+
       context "when reporter failed to report up/down" do
         it 'returns false when report down' do
           expect(reporter).to receive(:ping?).and_return(true)
@@ -78,6 +79,15 @@ describe Nerve::ServiceWatcher do
         expect(reporter).not_to receive(:report_down)
 
         expect(service_watcher.check_and_report).to be false
+      end
+    end
+
+    context 'when check is mocked' do
+      let(:check_mocked) { true }
+      it 'report up no matter if host is up or down' do
+        expect(reporter).to receive(:ping?).and_return(true)
+        expect(reporter).to receive(:report_up).and_return(true)
+        expect(service_watcher.check_and_report).to be true
       end
     end
   end

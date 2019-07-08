@@ -67,7 +67,17 @@ module Nerve
         raise ArgumentError, "you need to specify required argument #{required}" unless config[required]
       end
       @instance_id = config['instance_id']
-      @watchers_desired = config['services']
+      @watchers_desired = {}
+      config['services'].each do |key, value|
+        if value.key?('load_test_concurrency')
+          concurrenty = value['load_test_concurrency']
+          concurrenty.times do |i|
+            @watchers_desired["#{key}_#{i}"] = value
+          end
+        else
+          @watchers_desired[key] = value
+        end
+      end
       @max_repeated_report_failures = config['max_repeated_report_failures']
       @heartbeat_path = config['heartbeat_path']
       StatsD.configure_statsd(config["statsd"] || {})

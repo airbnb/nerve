@@ -116,12 +116,29 @@ describe Nerve::Nerve do
     it 'responds to changes in configuration' do
       nerve = Nerve::Nerve.new(mock_config_manager)
 
-      iterations = 4
+      iterations = 5
       expect(nerve).to receive(:heartbeat).exactly(iterations + 1).times do
-        if iterations == 4
+        if iterations == 5
           expect(nerve.instance_variable_get(:@watchers).keys).to contain_exactly('service1', 'service2')
 
           # Remove service2 from the config
+          expect(mock_config_manager).to receive(:config).and_return({
+            'instance_id' => nerve_instance_id,
+            'services' => {
+              'service1' => {
+                'host' => 'localhost',
+                'port' => 1234,
+                'load_test_concurrency' => 2
+              },
+            }
+          })
+          nerve.instance_variable_set(:@config_to_load, true)
+        elsif iterations == 4
+          expect(nerve.instance_variable_get(:@watchers).keys).to contain_exactly('service1_0', 'service1_1')
+          expect(nerve.instance_variable_get(:@watchers_desired).keys).to contain_exactly('service1_0', 'service1_1')
+          expect(nerve.instance_variable_get(:@config_to_load)).to eq(false)
+
+          # Change the configuration of service1
           expect(mock_config_manager).to receive(:config).and_return({
             'instance_id' => nerve_instance_id,
             'services' => {
@@ -132,8 +149,10 @@ describe Nerve::Nerve do
             }
           })
           nerve.instance_variable_set(:@config_to_load, true)
+
         elsif iterations == 3
           expect(nerve.instance_variable_get(:@watchers).keys).to contain_exactly('service1')
+          expect(nerve.instance_variable_get(:@watchers_desired).keys).to contain_exactly('service1')
           expect(nerve.instance_variable_get(:@config_to_load)).to eq(false)
 
           # Change the configuration of service1
