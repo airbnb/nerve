@@ -22,7 +22,7 @@ module Nerve
 
       @name = service['name']
 
-      # configure the reporter, which we use for reporting status to the registry 
+      # configure the reporter, which we use for reporting status to the registry
       @reporter = Reporter.new_from_service(service)
 
       # instantiate the checks for this service
@@ -58,6 +58,9 @@ module Nerve
 
       # how often do we initiate service checks?
       @check_interval = service['check_interval'] || 0.5
+
+      # mock service checks for load testing
+      @check_mocked = service['check_mocked'] || false
 
       # force an initial report on startup
       @was_up = nil
@@ -180,6 +183,9 @@ module Nerve
     end
 
     def check?
+      if @check_mocked
+        return true
+      end
       @service_checks.each do |check|
         up = check.up?
         statsd.increment('nerve.watcher.status.service_check', tags: ["check_result:#{up ? "up" : "down"}", "service_name:#{@name}", "check_name:#{check.name}"])
