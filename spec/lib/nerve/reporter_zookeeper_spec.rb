@@ -171,7 +171,7 @@ describe Nerve::Reporter::Zookeeper do
           }
         }
         str = @reporter.send(:get_key, service)
-        JSON.parse(Base64.urlsafe_decode64(str[1...-1])).should == expected
+        JSON.parse(Base64.urlsafe_decode64(str[8...-1])).should == expected
       end
 
       it 'get key without az' do
@@ -186,7 +186,7 @@ describe Nerve::Reporter::Zookeeper do
         }
 
         str = @reporter.send(:get_key, service)
-        JSON.parse(Base64.urlsafe_decode64(str[1...-1])).should == expected
+        JSON.parse(Base64.urlsafe_decode64(str[8...-1])).should == expected
       end
 
       it 'get key with instance name' do

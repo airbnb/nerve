@@ -134,7 +134,7 @@ class Nerve::Reporter
         if service.has_key?('labels')
           obj['labels'] = service['labels']
         end
-        '/' + Base64.urlsafe_encode64(JSON(obj)) + '_'
+        '/base64_' + Base64.urlsafe_encode64(JSON(obj)) + '_'
       else
         "/#{service['instance_id']}_"
       end
