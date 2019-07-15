@@ -131,10 +131,8 @@ class Nerve::Reporter
           'host' => service['host'],
           'port' => service['port']
         }
-        if service.has_key?('labels') && service['labels'].has_key?('az')
-          obj['labels'] = {
-            'az' => service['labels']['az']
-          }
+        if service.has_key?('labels')
+          obj['labels'] = service['labels']
         end
         '/' + Base64.urlsafe_encode64(JSON(obj)) + '_'
       else

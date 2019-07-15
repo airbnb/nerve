@@ -158,6 +158,7 @@ describe Nerve::Reporter::Zookeeper do
           'host' => '127.0.0.1',
           'port' => 3000,
           'labels' => {
+            'region' => 'us-east-1',
             'az' => 'us-east-1a'
           }
         }
@@ -165,6 +166,7 @@ describe Nerve::Reporter::Zookeeper do
           'host' => '127.0.0.1',
           'port' => 3000,
           'labels' => {
+            'region' => 'us-east-1',
             'az' => 'us-east-1a'
           }
         }
