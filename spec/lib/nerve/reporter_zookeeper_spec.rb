@@ -18,7 +18,7 @@ describe Nerve::Reporter::Zookeeper do
     expect(Nerve::Reporter::Zookeeper.new(subject).is_a?(Nerve::Reporter::Zookeeper)).to eql(true)
   end
 
-  it 'deregisters serviceservice on exit' do
+  it 'deregisters service on exit' do
     allow(zk).to receive(:close!)
     allow(zk).to receive(:connected?).and_return(true)
     expect(zk).to receive(:exists?) { "zk_path" }.and_return(false)
