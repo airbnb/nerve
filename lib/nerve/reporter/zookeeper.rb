@@ -8,6 +8,11 @@ class Nerve::Reporter
   class Zookeeper < Base
     ZK_CONNECTION_ERRORS = [ZK::Exceptions::OperationTimeOut, ZK::Exceptions::ConnectionLoss, ::Zookeeper::Exceptions::NotConnected]
 
+    # zookeeper children call will fail if the array of children names exceeds 4,194,304 bytes:
+    # https://issues.apache.org/jira/browse/ZOOKEEPER-272?attachmentOrder=desc
+    # here we limit max length of single child name to 64K, to allow reasonable number of children
+    PATH_ENCODING_MAX_LENGTH = 65536
+
     @@zk_pool = {}
     @@zk_pool_count = {}
     @@zk_pool_lock = Mutex.new
@@ -130,10 +135,11 @@ class Nerve::Reporter
         encoded = Base64.urlsafe_encode64(@data)
         length = encoded.length
         statsd.gauge('nerve.reporter.zk.child.bytes', length, tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"])
-        "/base64_#{length}_#{encoded}_"
-      else
-        "/#{service['instance_id']}_"
+        if length <= PATH_ENCODING_MAX_LENGTH
+          return "/base64_#{length}_#{encoded}_"
+        end
       end
+      "/#{service['instance_id']}_"
     end
 
     def zk_delete
