@@ -18,7 +18,7 @@ describe Nerve::Reporter::Zookeeper do
     expect(Nerve::Reporter::Zookeeper.new(subject).is_a?(Nerve::Reporter::Zookeeper)).to eql(true)
   end
 
-  it 'deregisters service on exit' do
+  it 'deregisters serviceservice on exit' do
     allow(zk).to receive(:close!)
     allow(zk).to receive(:connected?).and_return(true)
     expect(zk).to receive(:exists?) { "zk_path" }.and_return(false)
@@ -152,9 +152,21 @@ describe Nerve::Reporter::Zookeeper do
     end
 
     context "reporter path encoding" do
-      it 'get key with az' do
+      it 'encode child name with optional fields' do
         service = {
+          'instance_id' => 'i-xxxxxx',
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'labels' => {
+            'region' => 'us-east-1',
+            'az' => 'us-east-1a'
+          },
+          'zk_hosts' => ['zkhost1', 'zkhost2'],
+          'zk_path' => 'zk_path',
           'use_path_encoding' => true,
+        }
+        expected = {
+          'name' => 'i-xxxxxx',
           'host' => '127.0.0.1',
           'port' => 3000,
           'labels' => {
@@ -162,40 +174,41 @@ describe Nerve::Reporter::Zookeeper do
             'az' => 'us-east-1a'
           }
         }
-        expected = {
-          'host' => '127.0.0.1',
-          'port' => 3000,
-          'labels' => {
-            'region' => 'us-east-1',
-            'az' => 'us-east-1a'
-          }
-        }
-        str = @reporter.send(:get_key, service)
-        JSON.parse(Base64.urlsafe_decode64(str[8...-1])).should == expected
+        @reporter = Nerve::Reporter::Zookeeper.new(service)
+        str = @reporter.send(:encode_child_name, service)
+        JSON.parse(Base64.urlsafe_decode64(str[12...-1])).should == expected
       end
 
-      it 'get key without az' do
+      it 'encode child name with required fields only' do
         service = {
+          'instance_id' => 'i-xxxxxx',
           'use_path_encoding' => true,
           'host' => '127.0.0.1',
-          'port' => 3000
+          'port' => 3000,
+          'zk_hosts' => ['zkhost1', 'zkhost2'],
+          'zk_path' => 'zk_path',
+          'use_path_encoding' => true,
         }
         expected = {
+          'name' => 'i-xxxxxx',
           'host' => '127.0.0.1',
           'port' => 3000
         }
-
-        str = @reporter.send(:get_key, service)
-        JSON.parse(Base64.urlsafe_decode64(str[8...-1])).should == expected
+        @reporter = Nerve::Reporter::Zookeeper.new(service)
+        str = @reporter.send(:encode_child_name, service)
+        JSON.parse(Base64.urlsafe_decode64(str[11...-1])).should == expected
       end
 
-      it 'get key with instance name' do
+      it 'encode child name without path encoding' do
         service = {
+          'instance_id' => 'i-xxxxxx',
           'host' => '127.0.0.1',
           'port' => 3000,
-          'instance_id' => 'i-0f93010ac7d8016ef'
+          'zk_hosts' => ['zkhost1', 'zkhost2'],
+          'zk_path' => 'zk_path',
         }
-        expect(@reporter.send(:get_key, service)).to eq('/i-0f93010ac7d8016ef_')
+        @reporter = Nerve::Reporter::Zookeeper.new(service)
+        expect(@reporter.send(:encode_child_name, service)).to eq('/i-xxxxxx_')
       end
 
     end

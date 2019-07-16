@@ -23,7 +23,7 @@ class Nerve::Reporter
       @data = parse_data(get_service_data(service))
 
       @zk_path = service['zk_path']
-      @key_prefix = @zk_path + get_key(service)
+      @key_prefix = @zk_path + encode_child_name(service)
       @full_key = nil
     end
 
@@ -125,16 +125,13 @@ class Nerve::Reporter
       last_non_number ? first_token[0..last_non_number] : first_host
     end
 
-    def get_key(service)
-      if service.has_key?('use_path_encoding') && service['use_path_encoding'] == true
-        obj = {
-          'host' => service['host'],
-          'port' => service['port']
-        }
-        if service.has_key?('labels')
-          obj['labels'] = service['labels']
-        end
-        '/base64_' + Base64.urlsafe_encode64(JSON(obj)) + '_'
+    def encode_child_name(service)
+      if service['use_path_encoding'] == true
+        p @data
+        encoded = Base64.urlsafe_encode64(@data)
+        length = encoded.length
+        statsd.gauge('nerve.reporter.zk.child.bytes', length, tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"])
+        "/base64_#{encoded.length}_#{encoded}_"
       else
         "/#{service['instance_id']}_"
       end
