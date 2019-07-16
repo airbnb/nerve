@@ -150,6 +150,68 @@ describe Nerve::Reporter::Zookeeper do
         expect {@reporter.report_down}.to raise_error(ZK::Exceptions::SessionExpired)
       end
     end
+
+    context "reporter path encoding" do
+      it 'encode child name with optional fields' do
+        service = {
+          'instance_id' => 'i-xxxxxx',
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'labels' => {
+            'region' => 'us-east-1',
+            'az' => 'us-east-1a'
+          },
+          'zk_hosts' => ['zkhost1', 'zkhost2'],
+          'zk_path' => 'zk_path',
+          'use_path_encoding' => true,
+        }
+        expected = {
+          'name' => 'i-xxxxxx',
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'labels' => {
+            'region' => 'us-east-1',
+            'az' => 'us-east-1a'
+          }
+        }
+        @reporter = Nerve::Reporter::Zookeeper.new(service)
+        str = @reporter.send(:encode_child_name, service)
+        JSON.parse(Base64.urlsafe_decode64(str[12...-1])).should == expected
+      end
+
+      it 'encode child name with required fields only' do
+        service = {
+          'instance_id' => 'i-xxxxxx',
+          'use_path_encoding' => true,
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'zk_hosts' => ['zkhost1', 'zkhost2'],
+          'zk_path' => 'zk_path',
+          'use_path_encoding' => true,
+        }
+        expected = {
+          'name' => 'i-xxxxxx',
+          'host' => '127.0.0.1',
+          'port' => 3000
+        }
+        @reporter = Nerve::Reporter::Zookeeper.new(service)
+        str = @reporter.send(:encode_child_name, service)
+        JSON.parse(Base64.urlsafe_decode64(str[11...-1])).should == expected
+      end
+
+      it 'encode child name without path encoding' do
+        service = {
+          'instance_id' => 'i-xxxxxx',
+          'host' => '127.0.0.1',
+          'port' => 3000,
+          'zk_hosts' => ['zkhost1', 'zkhost2'],
+          'zk_path' => 'zk_path',
+        }
+        @reporter = Nerve::Reporter::Zookeeper.new(service)
+        expect(@reporter.send(:encode_child_name, service)).to eq('/i-xxxxxx_')
+      end
+
+    end
   end
 end
 

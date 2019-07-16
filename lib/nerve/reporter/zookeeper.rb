@@ -2,10 +2,16 @@ require 'nerve/reporter/base'
 require 'thread'
 require 'zk'
 require 'zookeeper'
+require "base64"
 
 class Nerve::Reporter
   class Zookeeper < Base
     ZK_CONNECTION_ERRORS = [ZK::Exceptions::OperationTimeOut, ZK::Exceptions::ConnectionLoss, ::Zookeeper::Exceptions::NotConnected]
+
+    # zookeeper children call will fail if the array of children names exceeds 4,194,304 bytes:
+    # https://issues.apache.org/jira/browse/ZOOKEEPER-272?attachmentOrder=desc
+    # here we limit max length of single child name to 64K, to allow reasonable number of children
+    PATH_ENCODING_MAX_LENGTH = 65536
 
     @@zk_pool = {}
     @@zk_pool_count = {}
@@ -22,7 +28,7 @@ class Nerve::Reporter
       @data = parse_data(get_service_data(service))
 
       @zk_path = service['zk_path']
-      @key_prefix = @zk_path + "/#{service['instance_id']}_"
+      @key_prefix = @zk_path + encode_child_name(service)
       @full_key = nil
     end
 
@@ -122,6 +128,18 @@ class Nerve::Reporter
       # remove domain extents and trailing numbers
       last_non_number = first_token.rindex(/[^0-9]/)
       last_non_number ? first_token[0..last_non_number] : first_host
+    end
+
+    def encode_child_name(service)
+      if service['use_path_encoding'] == true
+        encoded = Base64.urlsafe_encode64(@data)
+        length = encoded.length
+        statsd.gauge('nerve.reporter.zk.child.bytes', length, tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"])
+        if length <= PATH_ENCODING_MAX_LENGTH
+          return "/base64_#{length}_#{encoded}_"
+        end
+      end
+      "/#{service['instance_id']}_"
     end
 
     def zk_delete
