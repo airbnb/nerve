@@ -127,11 +127,10 @@ class Nerve::Reporter
 
     def encode_child_name(service)
       if service['use_path_encoding'] == true
-        p @data
         encoded = Base64.urlsafe_encode64(@data)
         length = encoded.length
         statsd.gauge('nerve.reporter.zk.child.bytes', length, tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"])
-        "/base64_#{encoded.length}_#{encoded}_"
+        "/base64_#{length}_#{encoded}_"
       else
         "/#{service['instance_id']}_"
       end
