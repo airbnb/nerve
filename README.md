@@ -65,6 +65,9 @@ The configuration contains the following options:
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
 * `check_mocked`: whether or not health check is mocked, the host check always returns healthy and report up when the value is true
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
+* `rate_limit_enabled` (optional): whether or not to enable rate limiting for reporting (defaults to `false`). If enabled, rate limiting is done via the [Token-Bucket algorithm](https://en.wikipedia.org/wiki/Token_bucket).
+* `rate_limit_avg` (optional): enforced average rate limit for reporting (defaults to `10/s`)
+* `rate_limit_burst` (optional): enforced maximum burst for reporting (defaults to `100`)
 * `weight` (optional): a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
 * `haproxy_server_options` (optional): a string containing any special haproxy server options for this service instance. For example if you wanted to set a service instance as a backup.
 * `labels` (optional): an object containing user-defined key-value pairs that describe this service instance. For example, you could label service instances with datacenter information.
