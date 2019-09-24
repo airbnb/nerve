@@ -29,6 +29,7 @@ module Nerve
       # configure the rate limiter for updates to the reporter
       @rate_limiter = RateLimiter.new(average_rate: service['rate_limit_avg'] || 10,
                                       max_burst: service['rate_limit_burst'] || 100)
+      @rate_limit_enabled = service.fetch('rate_limit_enabled', false)
 
       # instantiate the checks for this service
       @service_checks = []
@@ -164,16 +165,18 @@ module Nerve
       report_succeeded = true
       if is_up != @was_up
         if ! @rate_limiter.consume
-          log.warn "nerve: service #{@name} throttled"
-          statsd.increment('nerve.watcher.throttled', tags: ["service_name:#{@name}"])
+          log.warn "nerve: service #{@name} throttled (rate limiter enabled: #{@rate_limit_enabled})"
+          statsd.increment('nerve.watcher.throttled', tags: ["service_name:#{@name}", "rate_limit_enabled:#{@rate_limit_enabled}"])
 
           # When the request is throttled, ensure that the status is reported
           # the next time around.
           # This returns `nil` (instead of `false`) in order to avoid crashing
           # the service watcher because of repeated failures. `nil` specifically
           # reports that the requests were throttled.
-          @was_up = nil
-          return nil
+          if @rate_limit_enabled
+            @was_up = nil
+            return nil
+          end
         end
 
         if is_up

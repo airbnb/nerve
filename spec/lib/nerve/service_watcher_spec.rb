@@ -24,9 +24,10 @@ describe Nerve::ServiceWatcher do
   end
 
   describe 'check_and_report' do
-    let(:service_watcher) { Nerve::ServiceWatcher.new(build(:service, :check_mocked => check_mocked)) }
+    let(:service_watcher) { Nerve::ServiceWatcher.new(build(:service, :check_mocked => check_mocked, :rate_limit_enabled => rate_limit_enabled)) }
     let(:reporter) { service_watcher.instance_variable_get(:@reporter) }
     let(:check_mocked) { false }
+    let(:rate_limit_enabled) { true }
 
     context 'when pinging of reporter succeeds' do
       it 'pings the reporter' do
@@ -174,6 +175,28 @@ describe Nerve::ServiceWatcher do
         for _ in 0..100 do
           expect(service_watcher.check_and_report).not_to be nil
         end
+      end
+    end
+
+    context 'when rate limiting is disabled' do
+      let(:rate_limit_enabled) { false }
+
+      before {
+          travel_to Time.now
+
+          allow(reporter).to receive(:ping?).and_return(true)
+          allow(service_watcher).to receive(:check?) { rand() >= 0.5 }
+
+          for _ in 0..100
+            service_watcher.check_and_report
+          end
+        }
+
+      it 'does not throttle' do
+        service_watcher.instance_variable_set(:@was_up, false)
+        expect(service_watcher).to receive(:check?).and_return(true)
+        expect(reporter).to receive(:report_up).and_return(true)
+        expect(service_watcher.check_and_report).to be true
       end
     end
 
