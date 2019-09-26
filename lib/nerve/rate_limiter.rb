@@ -6,7 +6,7 @@ module Nerve
   # Note: a single instance of RateLimiter is *not* thread-safe.
   # See: https://en.wikipedia.org/wiki/Token_bucket
   class RateLimiter
-    def initialize(average_rate:, max_burst:, period: 1)
+    def initialize(average_rate: 1, max_burst: 10, period: 1)
       raise TypeError, "average_rate should be numeric" unless average_rate.is_a? Numeric
       raise TypeError, "max_burst should be numeric" unless max_burst.is_a? Numeric
       raise TypeError, "period should be numeric" unless period.is_a? Numeric
