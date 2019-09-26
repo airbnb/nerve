@@ -18,6 +18,18 @@ describe Nerve::RateLimiter do
     it 'can successfully initialize with a period' do
       Nerve::RateLimiter.new(average_rate: AVERAGE_RATE, max_burst: MAX_BURST, period: PERIOD)
     end
+
+    it 'validates types of arguments' do
+      expect {
+        Nerve::RateLimiter.new(average_rate: 'string', max_burst: 1, period: 1)
+      }.to raise_error TypeError
+      expect{
+        Nerve::RateLimiter.new(average_rate: 1, max_burst: 'string', period: 1)
+      }.to raise_error TypeError
+      expect{
+        Nerve::RateLimiter.new(average_rate: 1, max_burst: 1, period: 'string')
+      }.to raise_error TypeError
+    end
   end
 
   describe 'consume' do
