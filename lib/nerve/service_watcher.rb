@@ -27,9 +27,10 @@ module Nerve
       @reporter = Reporter.new_from_service(service)
 
       # configure the rate limiter for updates to the reporter
-      @rate_limiter = RateLimiter.new(average_rate: service['rate_limit_avg'] || 10,
-                                      max_burst: service['rate_limit_burst'] || 100)
-      @rate_limit_enabled = service.fetch('rate_limit_enabled', false)
+      rate_limit_config = service['rate_limiting'] || {}
+      @rate_limiter = RateLimiter.new(average_rate: rate_limit_config.fetch('average_rate', 10),
+                                      max_burst: rate_limit_config.fetch('max_burst', 100))
+      @rate_limit_enabled = rate_limit_config.fetch('enabled', false)
 
       # instantiate the checks for this service
       @service_checks = []
