@@ -7,13 +7,11 @@ module Nerve
   # See: https://en.wikipedia.org/wiki/Token_bucket
   class RateLimiter
     def initialize(average_rate: 1, max_burst: 10, period: 1)
-      raise TypeError, "average_rate should be numeric" unless average_rate.is_a? Numeric
-      raise TypeError, "max_burst should be numeric" unless max_burst.is_a? Numeric
-      raise TypeError, "period should be numeric" unless period.is_a? Numeric
+      raise ArgumentError, "average_rate should be numeric" unless average_rate.is_a? Numeric
+      raise ArgumentError, "max_burst should be numeric" unless max_burst.is_a? Numeric
 
       @average_rate = average_rate
       @max_burst = max_burst
-      @period = period
 
       @tokens = @average_rate
       @last_refill = Time.now
@@ -34,7 +32,7 @@ module Nerve
 
     def refill_tokens
       now = Time.now
-      elapsed = (now - @last_refill).to_f / @period
+      elapsed = now - @last_refill
       delta_tokens = (@average_rate * elapsed).floor
       return nil unless delta_tokens >= 1
 
