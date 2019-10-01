@@ -28,8 +28,8 @@ module Nerve
 
       # configure the rate limiter for updates to the reporter
       rate_limit_config = service['rate_limiting'] || {}
-      @rate_limiter = RateLimiter.new(average_rate: rate_limit_config.fetch('average_rate', 10),
-                                      max_burst: rate_limit_config.fetch('max_burst', 100))
+      @rate_limiter = RateLimiter.new(average_rate: rate_limit_config.fetch('average_rate', Float::INFINITY),
+                                      max_burst: rate_limit_config.fetch('max_burst', Float::INFINITY))
       @rate_limit_shadow_mode = rate_limit_config.fetch('shadow_mode', false)
 
       # instantiate the checks for this service

@@ -6,12 +6,12 @@ module Nerve
   # Note: a single instance of RateLimiter is *not* thread-safe.
   # See: https://en.wikipedia.org/wiki/Token_bucket
   class RateLimiter
-    def initialize(average_rate: 1, max_burst: 10, period: 1)
+    def initialize(average_rate: Float::INFINITY, max_burst: Float::INFINITY)
       raise ArgumentError, "average_rate should be numeric" unless average_rate.is_a? Numeric
       raise ArgumentError, "max_burst should be numeric" unless max_burst.is_a? Numeric
 
-      @average_rate = average_rate
-      @max_burst = max_burst
+      @average_rate = average_rate.to_f
+      @max_burst = max_burst.to_f
 
       @tokens = @average_rate
       @last_refill = Time.now
@@ -31,6 +31,8 @@ module Nerve
     private
 
     def refill_tokens
+      return nil unless @average_rate.finite?
+
       now = Time.now
       elapsed = now - @last_refill
       delta_tokens = (@average_rate * elapsed).floor

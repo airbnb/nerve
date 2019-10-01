@@ -76,8 +76,8 @@ Rate limiting is configured in the `rate_limiting` hash. If enabled, rate limiti
 That hash contains the following values:
 
 * `shadow_mode` (optional): shadow mode emits metrics/logs for rate limiting, but does not actually throttle requests (defaults to `true`). Set to `false` to throttle requests.
-* `average_rate` (optional): enforced average rate limit for reporting (defaults to `10/s`)
-* `max_burst` (optional): enforced maximum burst for reporting (defaults to `100`)
+* `average_rate` (optional): enforced average rate limit for reporting (defaults to `infinity`)
+* `max_burst` (optional): enforced maximum burst for reporting (defaults to `infinity`)
 
 #### Zookeeper Reporter ####
 
