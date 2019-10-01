@@ -75,7 +75,7 @@ The configuration contains the following options:
 Rate limiting is configured in the `rate_limiting` hash. If enabled, rate limiting is done via the [Token-Bucket algorithm](https://en.wikipedia.org/wiki/Token_bucket).
 That hash contains the following values:
 
-* `enabled` (optional): whether or not to enable rate limiting for reporting (defaults to `false`).
+* `shadow_mode` (optional): shadow mode emits metrics/logs for rate limiting, but does not actually throttle requests (defaults to `true`). Set to `false` to throttle requests.
 * `average_rate` (optional): enforced average rate limit for reporting (defaults to `10/s`)
 * `max_burst` (optional): enforced maximum burst for reporting (defaults to `100`)
 

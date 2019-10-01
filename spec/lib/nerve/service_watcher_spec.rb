@@ -27,7 +27,7 @@ describe Nerve::ServiceWatcher do
     let(:service_watcher) { Nerve::ServiceWatcher.new(build(:service, :check_mocked => check_mocked, :rate_limiting => rate_limit_config)) }
     let(:reporter) { service_watcher.instance_variable_get(:@reporter) }
     let(:check_mocked) { false }
-    let(:rate_limit_config) { {'enabled' => true} }
+    let(:rate_limit_config) { {'shadow_mode' => false} }
 
     context 'when pinging of reporter succeeds' do
       it 'pings the reporter' do
@@ -178,8 +178,8 @@ describe Nerve::ServiceWatcher do
       end
     end
 
-    context 'when rate limiting is disabled' do
-      let(:rate_limit_config) { {'enabled' => false} }
+    context 'when rate limiting is on shadow mode' do
+      let(:rate_limit_config) { {'shadow_mode' => true} }
 
       before {
           travel_to Time.now

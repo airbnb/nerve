@@ -30,7 +30,7 @@ module Nerve
       rate_limit_config = service['rate_limiting'] || {}
       @rate_limiter = RateLimiter.new(average_rate: rate_limit_config.fetch('average_rate', 10),
                                       max_burst: rate_limit_config.fetch('max_burst', 100))
-      @rate_limit_enabled = rate_limit_config.fetch('enabled', false)
+      @rate_limit_shadow_mode = rate_limit_config.fetch('shadow_mode', false)
 
       # instantiate the checks for this service
       @service_checks = []
@@ -166,16 +166,17 @@ module Nerve
       report_succeeded = true
       if is_up != @was_up
         if ! @rate_limiter.consume
-          log.warn "nerve: service #{@name} throttled (rate limiter enabled: #{@rate_limit_enabled})"
-          statsd.increment('nerve.watcher.throttled', tags: ["service_name:#{@name}", "rate_limit_enabled:#{@rate_limit_enabled}"])
+          log.warn "nerve: service #{@name} throttled (shadow mode: #{@rate_limit_shadow_mode})"
+          statsd.increment('nerve.watcher.throttled', tags: ["service_name:#{@name}", "shadow_mode:#{@rate_limit_shadow_mode}"])
 
-          # When the request is throttled, ensure that the status is reported
-          # the next time around.
-          # This returns `nil` (instead of `false`) in order to avoid crashing
-          # the service watcher because of repeated failures. `nil` specifically
-          # reports that the requests were throttled.
-          if @rate_limit_enabled
+          unless @rate_limit_shadow_mode
+            # When the request is throttled, ensure that the status is reported
+            # the next time around.
             @was_up = nil
+
+            # This returns `nil` (instead of `false`) in order to avoid crashing
+            # the service watcher because of repeated failures. `nil` specifically
+            # reports that the requests were throttled.
             return nil
           end
         end
