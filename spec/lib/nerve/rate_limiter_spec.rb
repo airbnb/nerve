@@ -22,6 +22,15 @@ describe Nerve::RateLimiter do
         Nerve::RateLimiter.new(average_rate: 1, max_burst: 'string')
       }.to raise_error ArgumentError
     end
+
+    it 'validates argument constraints' do
+      expect {
+        Nerve::RateLimiter.new(average_rate: -1, max_burst: 1)
+      }.to raise_error ArgumentError
+      expect{
+        Nerve::RateLimiter.new(average_rate: 1, max_burst: 0)
+      }.to raise_error ArgumentError
+    end
   end
 
   describe 'consume' do
@@ -70,6 +79,21 @@ describe Nerve::RateLimiter do
       it 'allows token to be consumed next period' do
         travel 1
         expect(rate_limiter.consume).to be true
+      end
+    end
+
+    context 'when the average rate is infinite' do
+      let!(:rate_limiter) {
+        Nerve::RateLimiter.new(average_rate: Float::INFINITY, max_burst: MAX_BURST)
+      }
+
+      it 'always allows tokens to be consumed' do
+        travel_to Time.now
+
+        # Should be able to consume more than the maximum burst
+        for _ in 1..(MAX_BURST * 2) do
+          expect(rate_limiter.consume).to be true
+        end
       end
     end
 

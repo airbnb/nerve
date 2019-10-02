@@ -8,7 +8,9 @@ module Nerve
   class RateLimiter
     def initialize(average_rate: Float::INFINITY, max_burst: Float::INFINITY)
       raise ArgumentError, "average_rate should be numeric" unless average_rate.is_a? Numeric
+      raise ArgumentError, "average_rate should be positive or zero" unless average_rate >= 0
       raise ArgumentError, "max_burst should be numeric" unless max_burst.is_a? Numeric
+      raise ArgumentError, "max_burst should be >= 1" unless max_burst >= 1
 
       @average_rate = average_rate.to_f
       @max_burst = max_burst.to_f
@@ -21,6 +23,8 @@ module Nerve
     # and false otherwise. For a rate-limited action, the action should be
     # executed only when `consume` returns true.
     def consume
+      return true unless @average_rate.finite?
+
       refill_tokens
       return false unless @tokens >= 1
 
@@ -31,8 +35,6 @@ module Nerve
     private
 
     def refill_tokens
-      return nil unless @average_rate.finite?
-
       now = Time.now
       elapsed = now - @last_refill
       delta_tokens = (@average_rate * elapsed).floor

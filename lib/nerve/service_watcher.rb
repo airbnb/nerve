@@ -126,7 +126,7 @@ module Nerve
         when nil
           # this case exists for when the request is throttled
           # do nothing
-          log.debug "nerve: check_and_report returned #{report_succeeded} (rate limiter shadow mode: #{@rate_limit_shadow_mode})"
+          log.info "nerve: check_and_report returned #{report_succeeded} (rate limiter shadow mode: #{@rate_limit_shadow_mode})"
         end
 
         # wait to run more checks but make sure to exit if $EXIT
