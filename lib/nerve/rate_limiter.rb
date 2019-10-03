@@ -25,10 +25,11 @@ module Nerve
     def consume
       return true unless @average_rate.finite?
 
-      refill_tokens
-      return false unless @tokens >= 1
+      new_tokens, now = refill_tokens
+      return false unless new_tokens >= 1
 
-      @tokens -= 1
+      @tokens = new_tokens - 1
+      @last_refill = now
       return true
     end
 
@@ -37,11 +38,9 @@ module Nerve
     def refill_tokens
       now = Time.now
       elapsed = now - @last_refill
-      delta_tokens = (@average_rate * elapsed).floor
-      return nil unless delta_tokens >= 1
+      delta_tokens = @average_rate * elapsed
 
-      @tokens = [@tokens + delta_tokens, @max_burst].min
-      @last_refill = now
+      return [@tokens + delta_tokens, @max_burst].min, now
     end
   end
 end
