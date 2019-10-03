@@ -65,9 +65,19 @@ The configuration contains the following options:
 * `check_interval`: the frequency with which service checks will be initiated; defaults to `500ms`
 * `check_mocked`: whether or not health check is mocked, the host check always returns healthy and report up when the value is true
 * `checks`: a list of checks that nerve will perform; if all of the pass, the service will be registered; otherwise, it will be un-registered
+* `rate_limiting` (optional): a hash containing the configuration for rate limiting (see 'Rate Limiting' below)
 * `weight` (optional): a positive integer weight value which can be used to affect the haproxy backend weighting in synapse.
 * `haproxy_server_options` (optional): a string containing any special haproxy server options for this service instance. For example if you wanted to set a service instance as a backup.
 * `labels` (optional): an object containing user-defined key-value pairs that describe this service instance. For example, you could label service instances with datacenter information.
+
+#### Rate Limiting ####
+
+Rate limiting is configured in the `rate_limiting` hash. If enabled, rate limiting is done via the [Token-Bucket algorithm](https://en.wikipedia.org/wiki/Token_bucket).
+That hash contains the following values:
+
+* `shadow_mode` (optional): shadow mode emits metrics/logs for rate limiting, but does not actually throttle requests (defaults to `true`). Set to `false` to throttle requests.
+* `average_rate` (optional): enforced average rate limit for reporting (defaults to `infinity`)
+* `max_burst` (optional): enforced maximum burst for reporting (defaults to `infinity`)
 
 #### Zookeeper Reporter ####
 
@@ -79,7 +89,7 @@ If you set your `reporter_type` to `"zookeeper"` you should also set these param
 
 #### Etcd Reporter ####
 
-Note: Etcd support is currently experimental! 
+Note: Etcd support is currently experimental!
 
 If you set your `reporter_type` to `"etcd"` you should also set these parameters:
 

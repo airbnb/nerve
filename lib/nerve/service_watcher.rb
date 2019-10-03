@@ -3,6 +3,7 @@ require 'nerve/service_watcher/http'
 require 'nerve/service_watcher/noop'
 require 'nerve/service_watcher/rabbitmq'
 require 'nerve/service_watcher/redis'
+require 'nerve/rate_limiter'
 
 module Nerve
   class ServiceWatcher
@@ -24,6 +25,12 @@ module Nerve
 
       # configure the reporter, which we use for reporting status to the registry
       @reporter = Reporter.new_from_service(service)
+
+      # configure the rate limiter for updates to the reporter
+      rate_limit_config = service['rate_limiting'] || {}
+      @rate_limiter = RateLimiter.new(average_rate: rate_limit_config.fetch('average_rate', Float::INFINITY),
+                                      max_burst: rate_limit_config.fetch('max_burst', Float::INFINITY))
+      @rate_limit_shadow_mode = rate_limit_config.fetch('shadow_mode', true)
 
       # instantiate the checks for this service
       @service_checks = []
@@ -111,10 +118,15 @@ module Nerve
       until watcher_should_exit? || repeated_report_failures >= @max_repeated_report_failures
         report_succeeded = check_and_report
 
-        if report_succeeded
+        case report_succeeded
+        when true
           repeated_report_failures = 0
-        else
+        when false
           repeated_report_failures += 1
+        when nil
+          # this case exists for when the request is throttled
+          # do nothing
+          log.info "nerve: check_and_report returned nil (rate limiter shadow mode: #{@rate_limit_shadow_mode})"
         end
 
         # wait to run more checks but make sure to exit if $EXIT
@@ -154,6 +166,22 @@ module Nerve
 
       report_succeeded = true
       if is_up != @was_up
+        if ! @rate_limiter.consume
+          log.warn "nerve: service #{@name} throttled (shadow mode: #{@rate_limit_shadow_mode})"
+          statsd.increment('nerve.watcher.throttled', tags: ["service_name:#{@name}", "shadow_mode:#{@rate_limit_shadow_mode}"])
+
+          unless @rate_limit_shadow_mode
+            # When the request is throttled, ensure that the status is reported
+            # the next time around.
+            @was_up = nil
+
+            # This returns `nil` (instead of `false`) in order to avoid crashing
+            # the service watcher because of repeated failures. `nil` specifically
+            # reports that the requests were throttled.
+            return nil
+          end
+        end
+
         if is_up
           report_succeeded = @reporter.report_up
           if report_succeeded
@@ -169,6 +197,7 @@ module Nerve
             log.warn "nerve: service #{@name} failed to report down"
           end
         end
+
         @was_up = is_up
 
         if report_succeeded
