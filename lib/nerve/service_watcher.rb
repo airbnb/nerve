@@ -30,7 +30,7 @@ module Nerve
       rate_limit_config = service['rate_limiting'] || {}
       @rate_limiter = RateLimiter.new(average_rate: rate_limit_config.fetch('average_rate', Float::INFINITY),
                                       max_burst: rate_limit_config.fetch('max_burst', Float::INFINITY))
-      @rate_limit_shadow_mode = rate_limit_config.fetch('shadow_mode', false)
+      @rate_limit_shadow_mode = rate_limit_config.fetch('shadow_mode', true)
 
       # instantiate the checks for this service
       @service_checks = []
