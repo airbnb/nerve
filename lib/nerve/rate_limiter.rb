@@ -6,7 +6,10 @@ module Nerve
   # Note: a single instance of RateLimiter is *not* thread-safe.
   # See: https://en.wikipedia.org/wiki/Token_bucket
   class RateLimiter
-    def initialize(average_rate: Float::INFINITY, max_burst: Float::INFINITY)
+    def initialize(options = {})
+      average_rate = options[:average_rate] || Float::Infinity
+      max_burst = options[:max_burst] || Float::Infinity
+
       raise ArgumentError, "average_rate should be numeric" unless average_rate.is_a? Numeric
       raise ArgumentError, "average_rate should be positive or zero" unless average_rate >= 0
       raise ArgumentError, "max_burst should be numeric" unless max_burst.is_a? Numeric
