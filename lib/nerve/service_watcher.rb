@@ -4,6 +4,7 @@ require 'nerve/service_watcher/noop'
 require 'nerve/service_watcher/rabbitmq'
 require 'nerve/service_watcher/redis'
 require 'nerve/rate_limiter'
+require 'nerve/version'
 
 module Nerve
   class ServiceWatcher
@@ -151,14 +152,14 @@ module Nerve
 
     def check_and_report
       if !@reporter.ping?
-        statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:fail", "service_name:#{@name}"])
+        statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:fail", "service_name:#{@name}", "nerve_version:#{VERSION}"])
 
         # If the reporter can't ping, then we do not know the status and must force a new report.
         # We will also skip checking service status since it couldn't be reported
         @was_up = nil
         return false
       end
-      statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:success", "service_name:#{@name}"])
+      statsd.increment('nerve.watcher.status.ping.count', tags: ["ping_result:success", "service_name:#{@name}", "nerve_version:#{VERSION}"])
 
       # what is the status of the service?
       is_up = check?
