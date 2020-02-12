@@ -91,8 +91,9 @@ That hash contains the following values:
 If you set your `reporter_type` to `"zookeeper"` you should also set these parameters:
 
 * `zk_hosts`: a list of the zookeeper hosts comprising the [ensemble](https://zookeeper.apache.org/doc/r3.1.2/zookeeperAdmin.html#sc_zkMulitServerSetup) that nerve will submit registration to
-* `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created; nerve will create the [ephemeral node](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) that is the registration as a child of this path
-* `use_path_encoding`: flag to turn on path encoding optimization, the canonical config data at host level (e.g. ip, port, az) is encoded using json base64 and written as zk child name, the zk child data will still be written for backward compatibility
+* `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created
+* `use_path_encoding`: optional flag to turn on path encoding optimization, the canonical config data at host level (e.g. ip, port, az) is encoded using json base64 and written as zk child name, the zk child data will still be written for backward compatibility
+* `node_type`: the [type](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) of znode that nerve will register as. The available types are `ephemeral_sequential`, `persistent_sequential`, `persistent` and `ephemeral`. If not specified, nerve will create the znode as `ephemeral_sequential` type by default
 
 #### Etcd Reporter ####
 
