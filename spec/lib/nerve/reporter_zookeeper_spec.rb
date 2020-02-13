@@ -46,7 +46,6 @@ describe Nerve::Reporter::Zookeeper do
       allow(ZK).to receive(:new).and_return(zk)
       @reporter = Nerve::Reporter::Zookeeper.new(subject)
       @reporter.start
-      @reporter.report_up
     end
 
     after(:each) do
@@ -60,16 +59,19 @@ describe Nerve::Reporter::Zookeeper do
     end
 
     it "returns true on report_down" do
+      @reporter.report_up
       expect(@reporter.report_down).to be true
     end
 
     it "returns true on ping?" do
+      @reporter.report_up
       expect(zk).to receive(:exists?) { "zk_path" }.and_return(true)
       expect(@reporter.ping?).to be true
     end
 
     context "when zk.connected? started to return false" do
       before(:each) do
+        @reporter.report_up
         # this condition is triggered if connection has been lost for a while (a few sec)
         expect(zk).to receive(:connected?).and_return(false)
       end
@@ -91,6 +93,10 @@ describe Nerve::Reporter::Zookeeper do
     end
 
     context "when there is a short disconnection" do
+      before(:each) do
+        @reporter.report_up
+      end
+
       it 'returns false on ping?' do
         # this condition is triggered if connection is shortly interrupted
         # so connected? still return true
@@ -129,6 +135,10 @@ describe Nerve::Reporter::Zookeeper do
     end
 
     context "when there is other ZK errors" do
+      before(:each) do
+        @reporter.report_up
+      end
+
       it 'raises zk non-connection error on ping?' do
         # this condition is triggered if connection is shortly interrupted
         # so connected? still return true
@@ -149,6 +159,24 @@ describe Nerve::Reporter::Zookeeper do
         expect(zk).to receive(:delete).and_raise(ZK::Exceptions::SessionExpired)
         expect {@reporter.report_down}.to raise_error(ZK::Exceptions::SessionExpired)
       end
+    end
+
+    context "when reporter up with setting ZK node type" do
+
+      it 'ZK client should use the default node type as :ephemeral_sequential if not specified' do
+        expect(zk).to receive(:create).with(anything, {:data => "{\"host\":\"host\",\"port\":\"port\",\"name\":\"instance_id\"}", :mode => :ephemeral_sequential})
+        expect(@reporter.report_up).to be true
+      end
+
+      it 'ZK client should use the node type as specified' do
+        @reporter.instance_variable_set(:@mode, :persistent)
+
+        expect(zk).to receive(:create).with(anything, {:data => "{\"host\":\"host\",\"port\":\"port\",\"name\":\"instance_id\"}", :mode => :persistent})
+        expect(@reporter.report_up).to be true
+
+        @reporter.instance_variable_set(:@mode, nil)
+      end
+      
     end
   end
 
@@ -213,7 +241,7 @@ describe Nerve::Reporter::Zookeeper do
     end
   end
 
-  context 'create different types of node' do
+  context 'parse node type properly when reporter is initializing' do
     it 'node type should be converted to symbol' do
       service = subject.merge({'node_type' => 'ephemeral'})
       reporter = Nerve::Reporter::Zookeeper.new(service)
