@@ -13,6 +13,8 @@ class Nerve::Reporter
     # here we limit max length of single child name to 64K, to allow reasonable number of children
     PATH_ENCODING_MAX_LENGTH = 65536
 
+    DEFAULT_NODE_TYPE = 'ephemeral_sequential'
+
     @@zk_pool = {}
     @@zk_pool_count = {}
     @@zk_pool_lock = Mutex.new
@@ -26,7 +28,7 @@ class Nerve::Reporter
       @zk_cluster = host_list_to_cluster(zk_host_list)
       @zk_connection_string = zk_host_list.join(',')
       @data = parse_data(get_service_data(service))
-
+      @mode = (service['node_type'] || DEFAULT_NODE_TYPE).to_sym
       @zk_path = service['zk_path']
       @key_prefix = @zk_path + encode_child_name(service)
       @full_key = nil
@@ -155,7 +157,7 @@ class Nerve::Reporter
       # only mkdir_p if the path does not exist
       statsd.time('nerve.reporter.zk.create.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"]) do
         @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
-        @full_key = @zk.create(@key_prefix, :data => @data, :mode => :ephemeral_sequential)
+        @full_key = @zk.create(@key_prefix, :data => @data, :mode => @mode)
       end
     end
 
