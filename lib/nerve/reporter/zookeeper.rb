@@ -32,6 +32,7 @@ class Nerve::Reporter
       @zk_path = service['zk_path']
       @key_prefix = @zk_path + encode_child_name(service)
       @full_key = nil
+      @node_ttl = service['ttl_duration']
     end
 
     def start()
@@ -81,7 +82,7 @@ class Nerve::Reporter
         return false
       else
         begin
-          zk_save
+          zk_save(! @full_key.nil?)
         rescue *ZK_CONNECTION_ERRORS => e
           log.error "nerve: error in reporting up on zk node #{@full_key}: #{e.message}"
           return false
@@ -113,7 +114,12 @@ class Nerve::Reporter
         return false
       else
         begin
-          return @zk.exists?(@full_key || '/')
+          node_stat = @zk.stat(@full_key || '/')
+
+          # only call renew_ttl when the option for refreshing TTL is passed
+          renew_ttl(node_stat) unless @node_ttl.nil?
+
+          return node_stat.exists?
         rescue *ZK_CONNECTION_ERRORS => e
           log.error "nerve: error in ping reporter at zk node #{@full_key}: #{e.message}"
           return false
@@ -158,18 +164,36 @@ class Nerve::Reporter
       statsd.time('nerve.reporter.zk.create.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"]) do
         @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
         @full_key = @zk.create(@key_prefix, :data => @data, :mode => @mode)
+        log.info "nerve: wrote new ZK node of type #{@mode} at #{@full_key}"
       end
     end
 
-    def zk_save
-      return zk_create unless @full_key
+    def zk_save(exists)
+      return zk_create unless exists
 
       begin
         statsd.time('nerve.reporter.zk.save.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}"]) do
           @zk.set(@full_key, @data)
+          log.info "nerve: set data on #{@full_key}"
         end
       rescue ZK::Exceptions::NoNode
         zk_create
+      end
+    end
+
+    # Renew TTL on the node by "touching" it. If the node exists, it will be
+    # written to with the same data. If it does not exist, it will be
+    # automatically be created.
+    # Note: ephemeral nodes are not written because they are managed by
+    # the session.
+    def renew_ttl(node_stat)
+      return if @node_ttl.nil?
+
+      node_exists = node_stat.nil? || node_stat.exists?
+      return if node_exists && node_stat.ephemeral?
+
+      if !node_exists || ((Time.now - node_stat.mtime_t) >= @node_ttl)
+        zk_save(node_exists)
       end
     end
   end
