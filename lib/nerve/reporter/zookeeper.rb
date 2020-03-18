@@ -32,7 +32,7 @@ class Nerve::Reporter
       @zk_path = service['zk_path']
       @key_prefix = @zk_path + encode_child_name(service)
       @full_key = nil
-      @node_ttl = service['ttl_duration']
+      @node_ttl = service['ttl_seconds']
     end
 
     def start()
@@ -82,7 +82,7 @@ class Nerve::Reporter
         return false
       else
         begin
-          zk_save(! @full_key.nil?)
+          zk_save(@full_key)
         rescue *ZK_CONNECTION_ERRORS => e
           log.error "nerve: error in reporting up on zk node #{@full_key}: #{e.message}"
           return false
@@ -116,8 +116,8 @@ class Nerve::Reporter
         begin
           node_stat = @zk.stat(@full_key || '/')
 
-          # only call renew_ttl when the option for refreshing TTL is passed
-          renew_ttl(node_stat) unless @node_ttl.nil?
+          # renew_ttl does nothing if @node_ttl is not set.
+          renew_ttl(node_stat)
 
           return node_stat.exists?
         rescue *ZK_CONNECTION_ERRORS => e
@@ -189,7 +189,7 @@ class Nerve::Reporter
     def renew_ttl(node_stat)
       return if @node_ttl.nil?
 
-      node_exists = node_stat.nil? || node_stat.exists?
+      node_exists = !node_stat.nil? && node_stat.exists?
       return if node_exists && node_stat.ephemeral?
 
       if !node_exists || ((Time.now - node_stat.mtime_t) >= @node_ttl)

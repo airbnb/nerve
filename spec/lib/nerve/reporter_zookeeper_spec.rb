@@ -317,14 +317,9 @@ describe Nerve::Reporter::Zookeeper do
       end
     end
 
-    it 'does not call renew_ttl' do
-      expect(subject).not_to receive(:renew_ttl)
-      subject.ping?
-    end
-
     context 'with ttl set' do
       let(:config) {
-        base_config.merge({'ttl_duration' => ttl,
+        base_config.merge({'ttl_seconds' => ttl,
                            'node_type' => node_type})
       }
       let(:ttl) { 360 }
@@ -358,7 +353,7 @@ describe Nerve::Reporter::Zookeeper do
   describe '#renew_ttl' do
     let(:config) {
       base_config.merge({'zk_path' => parent_path,
-                         'ttl_duration' => ttl,
+                         'ttl_seconds' => ttl,
                          'node_type' => node_type})
     }
     let(:ttl) { 360 }
@@ -473,6 +468,26 @@ describe Nerve::Reporter::Zookeeper do
           expect(zk).not_to receive(:set)
           subject.send(:renew_ttl, stat)
         end
+      end
+    end
+
+    context 'with nil stat provided' do
+      let(:stat) { nil }
+
+      it 'does not raise an error' do
+        allow(zk).to receive(:create)
+        expect { subject.send(:renew_ttl, stat) }.not_to raise_error
+      end
+
+      it 'calls zk_save' do
+        existing_mode = subject.instance_variable_get(:@mode)
+        expect(zk)
+            .to receive(:create)
+            .with(path, :data => data, :mode => existing_mode)
+            .exactly(:once)
+        expect(subject).to receive(:zk_save).with(false).exactly(:once).and_call_original
+
+        subject.send(:renew_ttl, stat)
       end
     end
   end
