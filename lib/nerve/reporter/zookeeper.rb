@@ -114,12 +114,7 @@ class Nerve::Reporter
         return false
       else
         begin
-          node_stat = @zk.stat(@full_key || '/')
-
-          # renew_ttl does nothing if @node_ttl is not set.
-          renew_ttl(node_stat)
-
-          return node_stat.exists?
+          return @zk.exists?(@full_key || '/')
         rescue *ZK_CONNECTION_ERRORS => e
           log.error "nerve: error in ping reporter at zk node #{@full_key}: #{e.message}"
           return false

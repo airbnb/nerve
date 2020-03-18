@@ -78,9 +78,7 @@ describe Nerve::Reporter::Zookeeper do
     it "returns true on ping?" do
       @reporter.report_up
 
-      stat = double("zk_stat")
-      allow(stat).to receive(:exists?).and_return(true)
-      expect(zk).to receive(:stat) { "zk_path" }.and_return(stat)
+      expect(zk).to receive(:exists?) { "zk_path" }.and_return(true)
       expect(@reporter.ping?).to be true
     end
 
@@ -92,7 +90,7 @@ describe Nerve::Reporter::Zookeeper do
       end
 
       it 'returns false on ping?' do
-        expect(zk).not_to receive(:stat)
+        expect(zk).not_to receive(:exists?)
         expect(@reporter.ping?).to be false
       end
 
@@ -115,7 +113,7 @@ describe Nerve::Reporter::Zookeeper do
       it 'returns false on ping?' do
         # this condition is triggered if connection is shortly interrupted
         # so connected? still return true
-        expect(zk).to receive(:stat).and_raise(ZK::Exceptions::OperationTimeOut)
+        expect(zk).to receive(:exists?).and_raise(ZK::Exceptions::OperationTimeOut)
         expect(@reporter.ping?).to be false
       end
 
@@ -157,7 +155,7 @@ describe Nerve::Reporter::Zookeeper do
       it 'raises zk non-connection error on ping?' do
         # this condition is triggered if connection is shortly interrupted
         # so connected? still return true
-        expect(zk).to receive(:stat).and_raise(ZK::Exceptions::SessionExpired)
+        expect(zk).to receive(:exists?).and_raise(ZK::Exceptions::SessionExpired)
         expect {@reporter.ping?}.to raise_error(ZK::Exceptions::SessionExpired)
       end
 
@@ -272,36 +270,23 @@ describe Nerve::Reporter::Zookeeper do
   describe '#ping?' do
     let(:path) { '/test/path' }
     let(:data) { {'host' => 'i-test', 'test' => true} }
-    let(:node_type) { 'persistent' }
     let(:zk_connected) { true }
     let(:node_exists) { true }
-    let(:node_mtime) { nil }
-    let(:stat) {
-      data = {'exists' => node_exists}
-
-      if node_exists
-        ephemeralOwner = 1 if node_type.start_with?('ephemeral')
-        data.merge!({'mtime' => node_mtime.to_i * 1000,
-                    'ephemeralOwner' => ephemeralOwner})
-      end
-
-      Zookeeper::Stat.new(data)
-    }
 
     before :each do
       subject.instance_variable_set(:@zk, zk)
       subject.instance_variable_set(:@data, data)
       subject.instance_variable_set(:@full_key, path) if node_exists
-      allow(zk).to receive(:stat).and_return(stat)
+      allow(zk).to receive(:exists?).and_return(node_exists)
       allow(zk).to receive(:connected?).and_return(zk_connected)
     end
 
     it 'calls stat on zookeeper' do
-      expect(zk).to receive(:stat).exactly(:once)
+      expect(zk).to receive(:exists?).exactly(:once)
       subject.ping?
     end
 
-    context 'when zk stat returns false' do
+    context 'when zk exists returns false' do
       let(:node_exists) { false }
 
       it 'returns false' do
@@ -309,35 +294,11 @@ describe Nerve::Reporter::Zookeeper do
       end
     end
 
-    context 'when zk stat returns true' do
+    context 'when zk exists returns true' do
       let(:node_exists) { true }
 
       it 'returns true' do
         expect(subject.ping?).to eq(true)
-      end
-    end
-
-    context 'with ttl set' do
-      let(:config) {
-        base_config.merge({'ttl_seconds' => ttl,
-                           'node_type' => node_type})
-      }
-      let(:ttl) { 360 }
-      let(:mtime) { Time.now if node_exists }
-
-      it 'calls renew_ttl' do
-        expect(subject).to receive(:renew_ttl).with(stat).exactly(:once)
-        subject.ping?
-      end
-
-      context 'when node does not exist' do
-        let(:node_exists) { false }
-
-        it 'calls renew_ttl' do
-          allow(zk).to receive(:exists?).with(path).and_return(true)
-          expect(subject).to receive(:renew_ttl).with(stat).exactly(:once)
-          subject.ping?
-        end
       end
     end
 
