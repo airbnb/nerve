@@ -311,6 +311,67 @@ describe Nerve::Reporter::Zookeeper do
     end
   end
 
+  describe '#start_ttl_renew_thread' do
+    let(:config) {
+      base_config.merge({'zk_path' => parent_path,
+                         'ttl_seconds' => ttl,
+                         'node_type' => node_type})
+    }
+    let(:ttl) { 360 }
+    let(:parent_path) { '/test' }
+    let(:node_type) { 'persistent' }
+
+    before :each do
+      subject.instance_variable_set(:@zk, zk)
+      allow(zk).to receive(:connected?).and_return(true)
+      allow(zk).to receive(:exists?).with(parent_path).and_return(true)
+    end
+
+    it 'starts a thread' do
+      expect(Thread).to receive(:new).exactly(:once)
+      subject.send(:start_ttl_renew_thread)
+    end
+
+    context 'when TTL mode is disabled' do
+      let(:ttl) { nil }
+
+      it 'does not start a thread' do
+        expect(Thread).not_to receive(:new)
+        subject.send(:start_ttl_renew_thread)
+      end
+
+      context 'when writing ephemeral nodes' do
+        let(:node_type) { 'ephemeral_sequential' }
+
+        it 'does not start a thread' do
+          expect(Thread).not_to receive(:new)
+          subject.send(:start_ttl_renew_thread)
+        end
+      end
+    end
+  end
+
+  describe '#stop_ttl_renew_thread' do
+    let(:thread) { double(Thread) }
+    before :each do
+      subject.instance_variable_set(:@ttl_thread, thread)
+    end
+
+    it 'waits on the thread' do
+      expect(thread).to receive(:join).exactly(:once)
+      subject.send(:stop_ttl_renew_thread)
+    end
+
+    context 'when thread is not started' do
+      let(:thread) { nil }
+
+      it 'continues silently' do
+        expect(thread).not_to receive(:join)
+        expect { subject.send(:stop_ttl_renew_thread) }.not_to raise_error
+      end
+    end
+  end
+
   describe '#renew_ttl' do
     let(:config) {
       base_config.merge({'zk_path' => parent_path,
@@ -321,134 +382,93 @@ describe Nerve::Reporter::Zookeeper do
     let(:parent_path) { '/test' }
     let(:path) { "#{parent_path}/child" }
     let(:data) { {'host' => 'i-test', 'test' => true} }
-
     let(:node_type) { 'persistent' }
-    let(:node_exists) { true }
-    let(:node_mtime) { Time.now }
-    let(:stat) {
-      data = {'exists' => node_exists}
-
-      if node_exists
-        ephemeralOwner = 1 if node_type.start_with?('ephemeral')
-        data.merge!({'mtime' => node_mtime.to_i * 1000,
-                    'ephemeralOwner' => ephemeralOwner})
-      end
-
-      Zookeeper::Stat.new(data)
-    }
+    let(:now) { Time.now }
 
     before :each do
       subject.instance_variable_set(:@zk, zk)
       subject.instance_variable_set(:@full_key, path)
       subject.instance_variable_set(:@key_prefix, path)
       subject.instance_variable_set(:@data, data)
-      allow(zk).to receive(:connected?).and_return(true)
-      allow(zk).to receive(:exists?).with(parent_path).and_return(true)
     end
 
     context 'when last TTL has expired' do
-      let(:node_mtime) { Time.now - ttl - 1 }
+      let(:last_refresh) { now - ttl - 1 }
 
-      it 'calls zk_save' do
-        expect(subject).to receive(:zk_save).exactly(:once).with(true)
-        subject.send(:renew_ttl, stat)
+      it 'calls zk.set' do
+        expect(zk).to receive(:set).with(path, data).exactly(:once)
+        subject.send(:renew_ttl, last_refresh, now)
       end
 
-      context 'when node exists' do
-        it 'touches the node without changing the data' do
-          expect(zk).to receive(:set).with(path, data).exactly(:once)
-          subject.send(:renew_ttl, stat)
-        end
-
-        it 'does not create a new node' do
-          allow(zk).to receive(:set).exactly(:once)
-          expect(zk).not_to receive(:create)
-          subject.send(:renew_ttl, stat)
-        end
+      it 'returns new time' do
+        allow(zk).to receive(:set)
+        expect(subject.send(:renew_ttl, last_refresh, now)).to eq(now)
       end
 
-      context 'when node does not exist' do
-        let(:node_exists) { false }
-        let(:node_mtime) { nil }
+      context 'when path is not set' do
+        let(:path) { nil }
 
-        it 'creates a new node' do
-          existing_mode = subject.instance_variable_get(:@mode)
-          expect(zk)
-            .to receive(:create)
-            .with(path, :data => data, :mode => existing_mode)
-            .exactly(:once)
+        it 'continues silently' do
+          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+        end
 
-          subject.send(:renew_ttl, stat)
+        it 'returns now' do
+          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(now)
         end
       end
 
-      context 'when writing ephemeral nodes' do
-        let(:node_type) { 'ephemeral_sequential' }
+      context 'when node does not exist from Zookeeper' do
+        before :each do
+          allow(zk).to receive(:set).and_raise(Zookeeper::Exceptions::NoNode)
+        end
 
-        it 'does not call zk_save' do
-          expect(subject).not_to receive(:zk_save)
-          expect(zk).not_to receive(:create)
-          expect(zk).not_to receive(:set)
-          subject.send(:renew_ttl, stat)
+        it 'continues silently' do
+          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+        end
+
+        it 'returns now' do
+          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(now)
         end
       end
     end
 
-    context 'when TTL is still active' do
-      let(:node_mtime) { Time.now }
+    context 'when last TTL is active' do
+      let(:last_refresh) { now - ttl + 1 }
 
-      context 'when node exists' do
-        it 'does not touch the node' do
-          expect(zk).not_to receive(:set)
-          expect(zk).not_to receive(:exists?)
-          subject.send(:renew_ttl, stat)
+      it 'does not call zk.set' do
+        expect(zk).not_to receive(:set)
+        subject.send(:renew_ttl, last_refresh, now)
+      end
+
+      it 'returns old time' do
+        allow(zk).to receive(:set)
+        expect(subject.send(:renew_ttl, last_refresh, now)).to eq(last_refresh)
+      end
+
+      context 'when path is not set' do
+        let(:path) { nil }
+
+        it 'continues silently' do
+          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
         end
 
-        it 'does not create a new node' do
-          expect(zk).not_to receive(:create)
-          expect(zk).not_to receive(:exists?)
-          subject.send(:renew_ttl, stat)
+        it 'returns old time' do
+          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(last_refresh)
         end
       end
-    end
 
-    context 'with TTL disabled' do
-      let(:config) { base_config }
-      let(:node_mtime) { nil }
-
-      it 'does not raise an error' do
-        expect { subject.send(:renew_ttl, stat) }.not_to raise_error
-      end
-
-      context 'when ttl is expired' do
-        let(:node_mtime) { Time.now - ttl - 1 }
-
-        it 'does not call zk_save' do
-          expect(subject).not_to receive(:zk_save)
-          expect(zk).not_to receive(:create)
-          expect(zk).not_to receive(:set)
-          subject.send(:renew_ttl, stat)
+      context 'when node does not exist from Zookeeper' do
+        before :each do
+          allow(zk).to receive(:set).and_raise(Zookeeper::Exceptions::NoNode)
         end
-      end
-    end
 
-    context 'with nil stat provided' do
-      let(:stat) { nil }
+        it 'continues silently' do
+          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+        end
 
-      it 'does not raise an error' do
-        allow(zk).to receive(:create)
-        expect { subject.send(:renew_ttl, stat) }.not_to raise_error
-      end
-
-      it 'calls zk_save' do
-        existing_mode = subject.instance_variable_get(:@mode)
-        expect(zk)
-            .to receive(:create)
-            .with(path, :data => data, :mode => existing_mode)
-            .exactly(:once)
-        expect(subject).to receive(:zk_save).with(false).exactly(:once).and_call_original
-
-        subject.send(:renew_ttl, stat)
+        it 'returns old time' do
+          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(last_refresh)
+        end
       end
     end
   end
