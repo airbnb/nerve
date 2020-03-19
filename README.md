@@ -94,6 +94,7 @@ If you set your `reporter_type` to `"zookeeper"` you should also set these param
 * `zk_path`: the path (or [znode](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#sc_zkDataModel_znodes)) where the registration will be created
 * `use_path_encoding`: optional flag to turn on path encoding optimization, the canonical config data at host level (e.g. ip, port, az) is encoded using json base64 and written as zk child name, the zk child data will still be written for backward compatibility
 * `node_type`: the [type](https://zookeeper.apache.org/doc/r3.1.2/zookeeperProgrammers.html#Ephemeral+Nodes) of znode that nerve will register as. The available types are `ephemeral_sequential`, `persistent_sequential`, `persistent`, and `ephemeral`. If not specified, nerve will create the znode as `ephemeral_sequential` type by default
+* `ttl_seconds`: repeatedly 'touch' the created node at this interval in order to update the `mtime`. If nil (the default), it will not perform this periodic update.
 
 #### Etcd Reporter ####
 
