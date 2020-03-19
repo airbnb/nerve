@@ -176,12 +176,24 @@ class Nerve::Reporter
       # only mkdir_p if the path does not exist
       statsd.time('nerve.reporter.zk.create.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"]) do
         @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
-        node_path = @zk.create(@key_prefix, :data => @data, :mode => @mode)
+
+        node_path = begin
+                      @zk.create(@key_prefix, :data => @data, :mode => @mode)
+                    rescue ::Zookeeper::Exceptions::NodeExists, ZK::Exceptions::NodeExists
+                      # This exception will only occur when not using sequential
+                      # nodes (because sequential nodes are always unique), in which
+                      # case the name is the same as @key_prefix as Zookeeper
+                      # will not append any suffix.
+                      @zk.set(@key_prefix, @data)
+                      log.info "nerve: tried to write node but exists, setting data instead"
+
+                      @key_prefix
+                    end
 
         @full_key_mu.synchronize {
           @full_key = node_path
         }
-        log.info "nerve: wrote new ZK node of type #{@mode} at #{@node_path}"
+        log.info "nerve: wrote new ZK node of type #{@mode} at #{node_path}"
       end
     end
 
@@ -235,7 +247,7 @@ class Nerve::Reporter
             @zk.set(node_path, @data)
             log.info "nerve: ttl renew: touched ZK node at #{node_path}"
             statsd.increment('nerve.reporter.zk.ttl.renew', tags: ["zk_cluster:#{@zk_cluster}", "result:success"])
-          rescue ::Zookeeper::Exceptions::NoNode
+          rescue ::Zookeeper::Exceptions::NoNode, ZK::Exceptions::NoNode
             log.info "nerve: ttl renew: failed to touch ZK node because node not found"
             statsd.increment('nerve.reporter.zk.ttl.renew', tags: ["zk_cluster:#{@zk_cluster}", "result:fail", "reason:no_node"])
           end

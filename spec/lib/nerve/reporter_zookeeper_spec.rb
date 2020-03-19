@@ -267,6 +267,67 @@ describe Nerve::Reporter::Zookeeper do
     end
   end
 
+  describe '#report_up' do
+    let(:parent_path) { '/test' }
+    let(:path) { "#{parent_path}/child" }
+    let(:key_prefix) { path }
+    let(:mode) { 'persistent' }
+    let(:data) { {'host' => 'i-test', 'test' => true} }
+
+
+    context 'when node already exists' do
+      before :each do
+        subject.instance_variable_set(:@zk, zk)
+        subject.instance_variable_set(:@zk_path, parent_path)
+        subject.instance_variable_set(:@key_prefix, path)
+        subject.instance_variable_set(:@data, data)
+        subject.instance_variable_set(:@mode, mode.to_sym)
+        subject.instance_variable_set(:@full_key, nil)
+
+        allow(zk).to receive(:connected?).and_return(true)
+        allow(zk).to receive(:exists?).with(parent_path).and_return(true)
+        allow(zk).to receive(:mkdir_p).with(parent_path)
+        allow(zk)
+          .to receive(:create)
+          .with(path, :data => data, :mode => mode.to_sym)
+          .and_raise(ZK::Exceptions::NodeExists)
+      end
+
+      context 'with persistent nodes' do
+        it 'calls set' do
+          expect(zk).to receive(:set).with(path, data).exactly(:once)
+          expect { subject.report_up }.not_to raise_error
+        end
+      end
+
+      context 'with persistent sequential nodes' do
+        let(:mode) { 'persistent_sequential' }
+
+        it 'calls set' do
+          expect(zk).to receive(:set).with(path, data).exactly(:once)
+          expect { subject.report_up }.not_to raise_error
+        end
+      end
+
+      context 'with ephemeral nodes' do
+        let(:mode) { 'ephemeral' }
+        it 'calls set' do
+          expect(zk).to receive(:set).with(path, data).exactly(:once)
+          expect { subject.report_up }.not_to raise_error
+        end
+      end
+
+      context 'with ephemeral sequential nodes' do
+        let(:mode) { 'ephemeral_sequential' }
+
+        it 'calls set' do
+          expect(zk).to receive(:set).with(path, data).exactly(:once)
+          expect { subject.report_up }.not_to raise_error
+        end
+      end
+    end
+  end
+
   describe '#ping?' do
     let(:path) { '/test/path' }
     let(:data) { {'host' => 'i-test', 'test' => true} }
