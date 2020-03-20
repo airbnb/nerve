@@ -15,6 +15,7 @@ class Nerve::Reporter
     PATH_ENCODING_MAX_LENGTH = 65536
 
     DEFAULT_NODE_TYPE = 'ephemeral_sequential'
+    TTL_RENEW_EXCLUSIONS = [ :ephemeral, :ephemeral_sequential ].freeze
 
     @@zk_pool = {}
     @@zk_pool_count = {}
@@ -33,7 +34,7 @@ class Nerve::Reporter
       @zk_path = service['zk_path']
       @key_prefix = @zk_path + encode_child_name(service)
       @node_ttl = service['ttl_seconds']
-      @full_key = Nerve::AtomicValue.new
+      @full_key = Nerve::AtomicValue.new(nil)
     end
 
     def start()
@@ -213,13 +214,13 @@ class Nerve::Reporter
       @ttl_should_exit = Nerve::AtomicValue.new(false)
       @ttl_thread = nil
 
-      unless @node_ttl.nil? || @mode.to_s.start_with?('ephemeral')
+      unless @node_ttl.nil? || TTL_RENEW_EXCLUSIONS.include?(@mode)
         @ttl_thread = Thread.new {
           log.info "nerve: ttl renew: background thread starting"
           last_run = Time.now - rand(@node_ttl)
 
           until @ttl_should_exit.get
-            last_run = renew_ttl(last_run, Time.now)
+            last_run = renew_ttl(last_run)
             sleep 0.5
           end
 
@@ -229,12 +230,12 @@ class Nerve::Reporter
     end
 
     # Renew the TTL of @full_key if more than @node_ttl seconds has passed
-    # between `now` and `last_refresh`.
+    # between `Time.now` and `last_refresh`.
     # Returns the last refresh time *after performing the renewal.*
-    # If the TTL *is* renewed, it will return `now`.
+    # If the TTL *is* renewed, it will return `Time.now`.
     # Otherwise, it will return `last_refresh`.
-    def renew_ttl(last_refresh, now)
-      elapsed = now - last_refresh
+    def renew_ttl(last_refresh)
+      elapsed = Time.now - last_refresh
 
       if elapsed >= @node_ttl
         node_path = @full_key.get
@@ -247,8 +248,11 @@ class Nerve::Reporter
             log.info "nerve: ttl renew: touched ZK node at #{node_path}"
             statsd.increment('nerve.reporter.zk.ttl.renew', tags: ["zk_cluster:#{@zk_cluster}", "result:success"])
           rescue ::Zookeeper::Exceptions::NoNode, ZK::Exceptions::NoNode
-            log.info "nerve: ttl renew: failed to touch ZK node because node not found"
+            log.info "nerve: ttl renew: failed to touch ZK node because node not found: #{node_path}"
             statsd.increment('nerve.reporter.zk.ttl.renew', tags: ["zk_cluster:#{@zk_cluster}", "result:fail", "reason:no_node"])
+          rescue *ZK_CONNECTION_ERRORS => e
+            log.info "nerve: ttl renew: Zookeeper connection issue: #{e}"
+            statsd.increment('nerve.reporter.zk.ttl.renew', tags: ["zk_cluster:#{@zk_cluster}", "result:fail", "reason:connection_error"])
           end
         end
 
@@ -256,7 +260,7 @@ class Nerve::Reporter
         # If @zk.set is called, then it's obvious that it should be set.
         # If @zk.set is *not* called, it can only be called after @full_key
         # is set, which happens when the node was just written.
-        return now
+        return Time.now
       end
 
       return last_refresh

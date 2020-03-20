@@ -1,8 +1,12 @@
 require 'spec_helper'
 require 'nerve/reporter/zookeeper'
 require 'zookeeper'
+require 'active_support/all'
+require 'active_support/testing/time_helpers'
 
 describe Nerve::Reporter::Zookeeper do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:base_config) { {
       'zk_hosts' => ['zkhost1', 'zkhost2'],
       'zk_path' => 'zk_path',
@@ -446,7 +450,14 @@ describe Nerve::Reporter::Zookeeper do
     let(:path) { "#{parent_path}/child" }
     let(:data) { {'host' => 'i-test', 'test' => true} }
     let(:node_type) { 'persistent' }
-    let(:now) { Time.now }
+    let(:now) {
+      travel_to Time.now
+      # The returned value needs to occur *after* the call to travel_to, because
+      # travel_to will round the current Time to a certain precision.
+      # Thus, we need to obtain the rounded time.
+      # See: https://api.rubyonrails.org/v5.2.4.1/classes/ActiveSupport/Testing/TimeHelpers.html#method-i-travel_to
+      Time.now
+    }
 
     before :each do
       subject.instance_variable_set(:@zk, zk)
@@ -460,23 +471,23 @@ describe Nerve::Reporter::Zookeeper do
 
       it 'calls zk.set' do
         expect(zk).to receive(:set).with(path, data).exactly(:once)
-        subject.send(:renew_ttl, last_refresh, now)
+        subject.send(:renew_ttl, last_refresh)
       end
 
       it 'returns new time' do
         allow(zk).to receive(:set)
-        expect(subject.send(:renew_ttl, last_refresh, now)).to eq(now)
+        expect(subject.send(:renew_ttl, last_refresh)).to eq(now)
       end
 
       context 'when path is not set' do
         let(:path) { nil }
 
         it 'continues silently' do
-          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+          expect { subject.send(:renew_ttl, last_refresh) }.not_to raise_error
         end
 
         it 'returns now' do
-          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(now)
+          expect(subject.send(:renew_ttl, last_refresh)).to eq(now)
         end
       end
 
@@ -486,11 +497,44 @@ describe Nerve::Reporter::Zookeeper do
         end
 
         it 'continues silently' do
-          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+          expect { subject.send(:renew_ttl, last_refresh) }.not_to raise_error
         end
 
         it 'returns now' do
-          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(now)
+          expect(subject.send(:renew_ttl, last_refresh)).to eq(now)
+        end
+      end
+
+      context 'when Zookeeper takes a long time to respond' do
+        before :each do
+          allow(zk).to receive(:set) {
+            # response takes 5s
+            travel 5
+          }
+        end
+
+        it 'returns new time' do
+          expect(subject.send(:renew_ttl, last_refresh)).to eq(now + 5)
+        end
+      end
+
+      context 'when Zookeeper times out' do
+        before :each do
+          allow(zk).to receive(:set).and_raise(ZK::Exceptions::OperationTimeOut)
+        end
+
+        it 'ignores the error' do
+          expect { subject.send(:renew_ttl, last_refresh) }.not_to raise_error
+        end
+      end
+
+      context 'when Zookeeper has connection issues' do
+        before :each do
+          allow(zk).to receive(:set).and_raise(ZK::Exceptions::ConnectionLoss)
+        end
+
+        it 'ignores the error' do
+          expect { subject.send(:renew_ttl, last_refresh) }.not_to raise_error
         end
       end
     end
@@ -500,23 +544,23 @@ describe Nerve::Reporter::Zookeeper do
 
       it 'does not call zk.set' do
         expect(zk).not_to receive(:set)
-        subject.send(:renew_ttl, last_refresh, now)
+        subject.send(:renew_ttl, last_refresh)
       end
 
       it 'returns old time' do
         allow(zk).to receive(:set)
-        expect(subject.send(:renew_ttl, last_refresh, now)).to eq(last_refresh)
+        expect(subject.send(:renew_ttl, last_refresh)).to eq(last_refresh)
       end
 
       context 'when path is not set' do
         let(:path) { nil }
 
         it 'continues silently' do
-          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+          expect { subject.send(:renew_ttl, last_refresh) }.not_to raise_error
         end
 
         it 'returns old time' do
-          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(last_refresh)
+          expect(subject.send(:renew_ttl, last_refresh)).to eq(last_refresh)
         end
       end
 
@@ -526,11 +570,11 @@ describe Nerve::Reporter::Zookeeper do
         end
 
         it 'continues silently' do
-          expect { subject.send(:renew_ttl, last_refresh, now) }.not_to raise_error
+          expect { subject.send(:renew_ttl, last_refresh) }.not_to raise_error
         end
 
         it 'returns old time' do
-          expect(subject.send(:renew_ttl, last_refresh, now)).to eq(last_refresh)
+          expect(subject.send(:renew_ttl, last_refresh)).to eq(last_refresh)
         end
       end
     end

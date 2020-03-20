@@ -2,7 +2,7 @@ require 'thread'
 
 module Nerve
   class AtomicValue
-    def initialize(initial_value=nil)
+    def initialize(initial_value)
       @mu = Mutex.new
       set(initial_value)
     end

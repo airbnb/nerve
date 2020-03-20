@@ -17,9 +17,8 @@ describe Nerve::AtomicValue do
     end
 
     context 'without a provided value' do
-      it 'defaults to nil' do
-        atom = Nerve::AtomicValue.new
-        expect(atom.get).to eq(nil)
+      it 'raises an error' do
+        expect { Nerve::AtomicValue.new }.to raise_error(ArgumentError)
       end
     end
   end
