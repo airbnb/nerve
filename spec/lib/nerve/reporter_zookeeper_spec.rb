@@ -282,7 +282,6 @@ describe Nerve::Reporter::Zookeeper do
         subject.instance_variable_set(:@key_prefix, path)
         subject.instance_variable_set(:@data, data)
         subject.instance_variable_set(:@mode, mode.to_sym)
-        subject.instance_variable_set(:@full_key, nil)
 
         allow(zk).to receive(:connected?).and_return(true)
         allow(zk).to receive(:exists?).with(parent_path).and_return(true)
@@ -337,7 +336,7 @@ describe Nerve::Reporter::Zookeeper do
     before :each do
       subject.instance_variable_set(:@zk, zk)
       subject.instance_variable_set(:@data, data)
-      subject.instance_variable_set(:@full_key, path) if node_exists
+      subject.instance_variable_get(:@full_key).set(path) if node_exists
       allow(zk).to receive(:exists?).and_return(node_exists)
       allow(zk).to receive(:connected?).and_return(zk_connected)
     end
@@ -414,8 +413,11 @@ describe Nerve::Reporter::Zookeeper do
 
   describe '#stop_ttl_renew_thread' do
     let(:thread) { double(Thread) }
+    let(:config) { base_config.merge({'ttl_seconds' => 10, 'node_type' => 'persistent'}) }
+
     before :each do
-      subject.instance_variable_set(:@ttl_thread, thread)
+      allow(Thread).to receive(:new).and_return(thread)
+      subject.send(:start_ttl_renew_thread)
     end
 
     it 'waits on the thread' do
@@ -448,7 +450,7 @@ describe Nerve::Reporter::Zookeeper do
 
     before :each do
       subject.instance_variable_set(:@zk, zk)
-      subject.instance_variable_set(:@full_key, path)
+      subject.instance_variable_get(:@full_key).set(path)
       subject.instance_variable_set(:@key_prefix, path)
       subject.instance_variable_set(:@data, data)
     end

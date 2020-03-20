@@ -1,4 +1,5 @@
 require 'nerve/reporter/base'
+require 'nerve/atomic'
 require 'thread'
 require 'zk'
 require 'zookeeper'
@@ -32,8 +33,7 @@ class Nerve::Reporter
       @zk_path = service['zk_path']
       @key_prefix = @zk_path + encode_child_name(service)
       @node_ttl = service['ttl_seconds']
-      @full_key = nil
-      @full_key_mu = Mutex.new
+      @full_key = Nerve::AtomicValue.new
     end
 
     def start()
@@ -62,7 +62,7 @@ class Nerve::Reporter
     def stop()
       stop_ttl_renew_thread
 
-      node_path = @full_key_mu.synchronize { @full_key }
+      node_path = @full_key.get
       log.info "nerve: removing zk node at #{node_path}" if node_path
 
       begin
@@ -84,7 +84,7 @@ class Nerve::Reporter
     end
 
     def report_up()
-      node_path = @full_key_mu.synchronize { @full_key }
+      node_path = @full_key.get
 
       if not @zk.connected?
         log.error "nerve: error in reporting up on zk node #{node_path}: loss connection"
@@ -102,7 +102,7 @@ class Nerve::Reporter
     end
 
     def report_down
-      node_path = @full_key_mu.synchronize { @full_key }
+      node_path = @full_key.get
 
       if not @zk.connected?
         log.error "nerve: error in reporting down on zk node #{node_path}: loss connection"
@@ -120,7 +120,7 @@ class Nerve::Reporter
     end
 
     def ping?
-      node_path = @full_key_mu.synchronize { @full_key }
+      node_path = @full_key.get
 
       if not @zk.connected?
         log.error "nerve: error in ping reporter at zk node #{node_path}: loss connection"
@@ -159,16 +159,14 @@ class Nerve::Reporter
     end
 
     def zk_delete
-      node_path = @full_key_mu.synchronize { @full_key }
+      node_path = @full_key.get
 
       if node_path
         statsd.time('nerve.reporter.zk.delete.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}"]) do
           @zk.delete(node_path, :ignore => :no_node)
         end
 
-        @full_key_mu.synchronize {
-          @full_key = nil
-        }
+        @full_key.set(nil)
       end
     end
 
@@ -177,23 +175,24 @@ class Nerve::Reporter
       statsd.time('nerve.reporter.zk.create.elapsed_time', tags: ["zk_cluster:#{@zk_cluster}", "zk_path:#{@zk_path}"]) do
         @zk.mkdir_p(@zk_path) unless @zk.exists?(@zk_path)
 
-        node_path = begin
-                      @zk.create(@key_prefix, :data => @data, :mode => @mode)
-                    rescue ::Zookeeper::Exceptions::NodeExists, ZK::Exceptions::NodeExists
-                      # This exception will only occur when not using sequential
-                      # nodes (because sequential nodes are always unique), in which
-                      # case the name is the same as @key_prefix as Zookeeper
-                      # will not append any suffix.
-                      @zk.set(@key_prefix, @data)
-                      log.info "nerve: tried to write node but exists, setting data instead"
-
-                      @key_prefix
-                    end
-
-        @full_key_mu.synchronize {
-          @full_key = node_path
-        }
+        node_path = zk_try_create
+        @full_key.set(node_path)
         log.info "nerve: wrote new ZK node of type #{@mode} at #{node_path}"
+      end
+    end
+
+    def zk_try_create
+      begin
+        return @zk.create(@key_prefix, :data => @data, :mode => @mode)
+      rescue ::Zookeeper::Exceptions::NodeExists, ZK::Exceptions::NodeExists
+        # This exception will only occur when not using sequential
+        # nodes (because sequential nodes are always unique), in which
+        # case the name is the same as @key_prefix as Zookeeper
+        # will not append any suffix.
+        @zk.set(@key_prefix, @data)
+        log.info "nerve: tried to write node but exists, setting data instead"
+
+        return @key_prefix
       end
     end
 
@@ -211,7 +210,7 @@ class Nerve::Reporter
     end
 
     def start_ttl_renew_thread
-      @ttl_should_exit = false
+      @ttl_should_exit = Nerve::AtomicValue.new(false)
       @ttl_thread = nil
 
       unless @node_ttl.nil? || @mode.to_s.start_with?('ephemeral')
@@ -219,7 +218,7 @@ class Nerve::Reporter
           log.info "nerve: ttl renew: background thread starting"
           last_run = Time.now - rand(@node_ttl)
 
-          until @ttl_should_exit
+          until @ttl_should_exit.get
             last_run = renew_ttl(last_run, Time.now)
             sleep 0.5
           end
@@ -238,7 +237,7 @@ class Nerve::Reporter
       elapsed = now - last_refresh
 
       if elapsed >= @node_ttl
-        node_path = @full_key_mu.synchronize { @full_key }
+        node_path = @full_key.get
 
         if node_path.nil?
           log.info "nerve: ttl renew: not touching ZK node because path not set"
@@ -264,7 +263,7 @@ class Nerve::Reporter
     end
 
     def stop_ttl_renew_thread
-      @ttl_should_exit = true
+      @ttl_should_exit.set(true)
       @ttl_thread.join unless @ttl_thread.nil?
     end
   end
