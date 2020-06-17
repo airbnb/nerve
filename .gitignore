@@ -20,3 +20,4 @@ tmp
 vendor
 .vagrant
 .ruby-version
+Gemfile.lock
