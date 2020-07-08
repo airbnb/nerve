@@ -44,7 +44,9 @@ class Nerve::Reporter
       @@zk_pool_lock.synchronize {
         unless @@zk_pool.has_key?(@zk_connection_string)
           log.info "nerve: creating pooled connection to #{@zk_connection_string}"
-          @@zk_pool[@zk_connection_string] = ZK.new(@zk_connection_string, :timeout => 5)
+          # zk session timeout is 2 * receive_timeout_msec (as of zookeeper-1.4.x)
+          # i.e. 16000 means 32 sec session timeout
+          @@zk_pool[@zk_connection_string] = ZK.new(@zk_connection_string, :timeout => 5, :receive_timeout_msec => 16000)
           @@zk_pool_count[@zk_connection_string] = 1
           log.info "nerve: successfully created zk connection to #{@zk_connection_string}"
           statsd.increment('nerve.reporter.zk.client.created', tags: ["zk_cluster:#{@zk_cluster}"])
