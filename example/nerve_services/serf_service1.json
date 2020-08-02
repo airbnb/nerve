@@ -1,0 +1,16 @@
+{
+  "host": "1.2.3.4",
+  "port": 3000,
+  "reporter_type": "serf",
+  "check_interval": 2,
+  "weight": 2,
+  "checks": [
+    {
+      "type": "http",
+      "uri": "/health",
+      "timeout": 0.2,
+      "rise": 3,
+      "fall": 2
+    }
+  ]
+}
